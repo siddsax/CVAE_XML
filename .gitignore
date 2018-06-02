@@ -3,3 +3,5 @@ out
 out_abltn
 XMLPerf_eval
 data_xml.zip
+*.pyc
+saved_model
