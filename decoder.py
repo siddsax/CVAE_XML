@@ -17,7 +17,7 @@ class decoder(torch.nn.Module):
         self.l0 = torch.nn.Linear(Z_dim + y_dim, h_dim, bias=True)
         self.l1 = torch.nn.ReLU()
         self.l2 = torch.nn.Linear(h_dim, X_dim, bias=True)
-        self.l3 = torch.nn.Sigmoid()
+        self.l3 = torch.nn.ReLU()
         
     def forward(self, inputs):
         

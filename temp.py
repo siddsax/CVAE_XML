@@ -1,5 +1,5 @@
 import torch
-import torch.nn.functional as nn
+import torch.nn as nn
 import torch.autograd as autograd
 import torch.optim as optim
 import numpy as np
@@ -72,7 +72,8 @@ P = decoder(X_dim, y_dim, h_dim, Z_dim)
 # =============================== TRAINING ====================================
 
 optimizer = optim.Adam(list(P.parameters()) + list(Q.parameters()), lr=lr)
-
+loss_fn = torch.nn.BCEWithLogitsLoss(size_average=False)
+loss_best = 1000
 for it in range(10000000):
     a = it*mb_size%(N-mb_size)
     X, c = x_tr[a:a+mb_size], y_tr[a:a+mb_size]
@@ -87,10 +88,15 @@ for it in range(10000000):
     X_sample = P.forward(inp)
 
     # Loss
-    recon_loss = nn.binary_cross_entropy(X_sample, X, size_average=False) / mb_size
+    recon_loss = loss_fn(X_sample, X) / mb_size
     kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_var) + z_mu**2 - 1. - z_var, 1))
     loss = recon_loss + kl_loss
 
+    if(recon_loss<0):
+        print(recon_loss)
+        print(X_sample[0:100])
+        print(X[0:100])
+        sys.exit()
     # print(kl_loss)
     # print(torch.max(z_var))
 
@@ -101,7 +107,7 @@ for it in range(10000000):
     optimizer.step()
 
     # Print and plot every now and then
-    if it % 1000 == 0:
+    if it % 10000 == 0:
         print('Iter-{}; Loss: {:.4}'.format(it, loss.data))
         if(int(sys.argv[2])):
 
@@ -113,9 +119,15 @@ for it in range(10000000):
                 os.makedirs('out/')
 
             plt.savefig('out/{}.png'.format(str(cnt).zfill(3)), bbox_inches='tight')
-            cnt += 1
+        cnt += 1
         
         if not os.path.exists('saved_model/'):
             os.makedirs('saved_model/')
         torch.save(P.state_dict(), "saved_model/P_" + str(cnt))
         torch.save(Q.state_dict(), "saved_model/Q_"+ str(cnt))
+
+        if(loss<loss_best):
+            loss_best = loss
+            torch.save(P.state_dict(), "saved_model/P_best")
+            torch.save(Q.state_dict(), "saved_model/Q_best")
+
