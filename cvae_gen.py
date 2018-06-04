@@ -1,5 +1,5 @@
 import torch
-import torch.nn.functional as nn
+import torch.nn as nn
 import torch.autograd as autograd
 import torch.optim as optim
 import numpy as np
@@ -12,7 +12,8 @@ import sys
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
-
+from encoder import encoder
+from decoder import decoder
 
 x_tr = np.load('datasets/Eurlex/ft_trn.npy')
 pca = PCA(n_components=2)
@@ -49,26 +50,15 @@ def xavier_init(size):
     xavier_stddev = 1. / np.sqrt(in_dim / 2.)
     return Variable(torch.randn(*size) * xavier_stddev, requires_grad=True)
 
+# def weights_init(m):
+#     classname = m.__class__.__name__
+#     if classname.find('Conv') != -1:
+#         xavier(m.weight.data)
+#         xavier(m.bias.data)
 
 # =============================== Q(z|X) ======================================
 
-Wxh = xavier_init(size=[X_dim + y_dim, h_dim])
-bxh = Variable(torch.zeros(h_dim), requires_grad=True)
-
-Whz_mu = xavier_init(size=[h_dim, Z_dim])
-bhz_mu = Variable(torch.zeros(Z_dim), requires_grad=True)
-
-Whz_var = xavier_init(size=[h_dim, Z_dim])
-bhz_var = Variable(torch.zeros(Z_dim), requires_grad=True)
-
-
-def Q(X, c):
-    inputs = torch.cat([X, c], 1)
-    h = nn.relu(torch.matmul(inputs , Wxh) + bxh.repeat(inputs.size(0), 1))
-    z_mu = torch.matmul(h , Whz_mu) + bhz_mu.repeat(h.size(0), 1)
-    z_var = torch.matmul(h , Whz_var) + bhz_var.repeat(h.size(0), 1)
-    return z_mu, z_var
-
+Q = encoder(X_dim, y_dim, h_dim, Z_dim)
 
 def sample_z(mu, log_var):
     eps = Variable(torch.randn(mb_size, Z_dim))
@@ -77,60 +67,47 @@ def sample_z(mu, log_var):
 
 # =============================== P(X|z) ======================================
 
-Wzh = xavier_init(size=[Z_dim + y_dim, h_dim])
-bzh = Variable(torch.zeros(h_dim), requires_grad=True)
-
-Whx = xavier_init(size=[h_dim, X_dim])
-bhx = Variable(torch.zeros(X_dim), requires_grad=True)
-
-
-def P(z, c):
-    inputs = torch.cat([z, c], 1)
-    h = nn.relu(torch.matmul(inputs , Wzh) + bzh.repeat(inputs.size(0), 1))
-    X = nn.sigmoid(torch.matmul(h , Whx) + bhx.repeat(h.size(0), 1))
-    return X
-
+P = decoder(X_dim, y_dim, h_dim, Z_dim)
 
 # =============================== TRAINING ====================================
 
-params = [Wxh, bxh, Whz_mu, bhz_mu, Whz_var, bhz_var,
-          Wzh, bzh, Whx, bhx]
-
-solver = optim.Adam(params, lr=lr)
-
-for it in range(100000):
+optimizer = optim.Adam(list(P.parameters()) + list(Q.parameters()), lr=lr)
+loss_fn = torch.nn.BCEWithLogitsLoss(size_average=False)
+loss_best = 1000
+for it in range(10000000):
     a = it*mb_size%(N-mb_size)
     X, c = x_tr[a:a+mb_size], y_tr[a:a+mb_size]
     X = Variable(torch.from_numpy(X.astype('float32')))
     c = Variable(torch.from_numpy(c.astype('float32')))
 
     # Forward
-    z_mu, z_var = Q(X, c)
+    inp = torch.cat([X, c],1)
+    z_mu, z_var  = Q.forward(inp)
     z = sample_z(z_mu, z_var)
-    X_sample = P(z, c)
+    inp = torch.cat([z, c], 1)
+    X_sample = P.forward(inp)
 
     # Loss
-    recon_loss = nn.binary_cross_entropy(X_sample, X, size_average=False) / mb_size
+    recon_loss = loss_fn(X_sample, X) / mb_size
     kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_var) + z_mu**2 - 1. - z_var, 1))
     loss = recon_loss + kl_loss
 
+    if(recon_loss<0):
+        print(recon_loss)
+        print(X_sample[0:100])
+        print(X[0:100])
+        sys.exit()
     # print(kl_loss)
     # print(torch.max(z_var))
 
     # Backward
+    # Zero the gradients before running the backward pass.
+    optimizer.zero_grad()
     loss.backward()
-
-    # Update
-    solver.step()
-
-    # Housekeeping
-    for p in params:
-        if p.grad is not None:
-            data = p.grad.data
-            p.grad = Variable(data.new().resize_as_(data).zero_())
+    optimizer.step()
 
     # Print and plot every now and then
-    if it % 1000 == 0:
+    if it % 10000 == 0:
         print('Iter-{}; Loss: {:.4}'.format(it, loss.data))
         if(int(sys.argv[2])):
 
@@ -142,8 +119,15 @@ for it in range(100000):
                 os.makedirs('out/')
 
             plt.savefig('out/{}.png'.format(str(cnt).zfill(3)), bbox_inches='tight')
-            cnt += 1
+        cnt += 1
         
-        # if not os.path.exists('saved_model/'):
-        #     os.makedirs('saved_model/')
-        # torch.save(the_model.state_dict(), "saved_model/")
+        if not os.path.exists('saved_model/'):
+            os.makedirs('saved_model/')
+        torch.save(P.state_dict(), "saved_model/P_" + str(cnt))
+        torch.save(Q.state_dict(), "saved_model/Q_"+ str(cnt))
+
+        if(loss<loss_best):
+            loss_best = loss
+            torch.save(P.state_dict(), "saved_model/P_best")
+            torch.save(Q.state_dict(), "saved_model/Q_best")
+

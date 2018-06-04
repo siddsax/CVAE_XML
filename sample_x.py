@@ -51,14 +51,14 @@ x = int(np.mean(np.sum(y_tr, axis=1)))
 # print(k)
 # print(num_lbls)
 
-new_y = np.zeros(np.shape(y_tr))#[0], np.shape(y_tr)[1])
+new_y2 = np.zeros(np.shape(y_tr))#[0], np.shape(y_tr)[1])
 for i in range(np.shape(y_tr)[0]):
     labels = ksort[:np.sum(k<2)]
     fin_labels = np.random.choice(labels, x, replace=False)
-    new_y[i, fin_labels] = 1
+    new_y2[i, fin_labels] = 1
     # print(pcaed)
 
-new_y = pca.transform(new_y)
+new_y = pca.transform(new_y2)
 new_y = scaler.transform(new_y)
 
 c = Variable(torch.from_numpy(new_y.astype('float32')))
@@ -77,5 +77,5 @@ pca.fit(x_tr)
 x_tr = pca.transform(x_tr)
 scaler = preprocessing.StandardScaler().fit(x_tr)
 new_x = pca.inverse_transform(scaler.inverse_transform(X_sample.data)) 
-np.save('new_x', new_x)
-np.save('new_y', new_y)
+np.save('datasets/new_x', np.around(new_x, decimals=4))
+np.save('datasets/new_y', new_y2)
