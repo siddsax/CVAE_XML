@@ -15,19 +15,19 @@ class decoder(torch.nn.Module):
         
         super(decoder, self).__init__()
         
-        self.l0 = nn.Linear(Z_dim + y_dim, h_dim + y_dim, bias=True)
-        self.l1 = nn.ReLU()
+        self.l0 = nn.DataParallel(nn.Linear(Z_dim + y_dim, h_dim + y_dim, bias=True))
+        self.l1 = nn.DataParallel(nn.ReLU())
         # self.bn = nn.BatchNorm1d(h_dim + y_dim)
 
-        self.l2 = nn.Linear(h_dim + y_dim, 2*h_dim + y_dim, bias=True)
-        self.l3 = nn.ReLU()
+        self.l2 = nn.DataParallel(nn.Linear(h_dim + y_dim, 2*h_dim + y_dim, bias=True))
+        self.l3 = nn.DataParallel(nn.ReLU())
         # self.bn = nn.BatchNorm1d(2*h_dim + y_dim)
         
-        self.l4 = nn.Linear(2*h_dim + y_dim, 3*h_dim + y_dim, bias=True)
-        self.l5 = nn.ReLU()
+        self.l4 = nn.DataParallel(nn.Linear(2*h_dim + y_dim, 3*h_dim + y_dim, bias=True))
+        self.l5 = nn.DataParallel(nn.ReLU())
         # self.bn = nn.BatchNorm1d(3*h_dim + y_dim)
 
-        self.l6 = nn.Linear(3*h_dim + y_dim, X_dim, bias=True)
+        self.l6 = nn.DataParallel(nn.Linear(3*h_dim + y_dim, X_dim, bias=True))
         self.l7 = nn.ReLU()
 
     def forward(self, inputs):
