@@ -66,7 +66,9 @@ X_dim = 2
 y_dim = 2
 P = decoder(X_dim, y_dim, h_dim, Z_dim)
 P.load_state_dict(torch.load('saved_model/P_best'))
-
+############## TESTING ON!!! ###########
+P.eval()
+#########################################
 eps = Variable(torch.randn(np.shape(y_tr)[0], Z_dim))
 inp = torch.cat([eps, c], 1)
 X_sample = P.forward(inp)
