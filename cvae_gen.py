@@ -30,6 +30,8 @@ parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for m
 parser.add_argument('--s', dest='step', type=int, default=100, help='step for displaying loss')
 parser.add_argument('--b', dest='beta', type=int, default=10, help='Regularization param')
 parser.add_argument('--d', dest='disp_flg', type=int, default=1, help='display graphs')
+parser.add_argument('--sve', dest='save', type=int, default=0, help='save models or not')
+parser.add_argument('--ss', dest='save_step', type=int, default=5000, help='gap between model saves')
 args = parser.parse_args()
 
 
@@ -154,12 +156,15 @@ for it in range(1000000):
         #         os.makedirs('out/')
 
         #     plt.savefig('out/{}.png'.format(str(cnt).zfill(3)), bbox_inches='tight')
-        cnt += 1
+
+    if args.save:
         
-        if not os.path.exists('saved_model/'):
-            os.makedirs('saved_model/')
-        torch.save(P.state_dict(), "saved_model/P_" + str(cnt))
-        torch.save(Q.state_dict(), "saved_model/Q_"+ str(cnt))
+        if it % args.save_step == 0:
+            if not os.path.exists('saved_model/'):
+                os.makedirs('saved_model/')
+            torch.save(P.state_dict(), "saved_model/P_" + str(cnt))
+            torch.save(Q.state_dict(), "saved_model/Q_"+ str(cnt))
+            cnt += 1
 
         if(loss<loss_best):
             loss_best = loss
