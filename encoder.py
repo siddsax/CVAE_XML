@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 # import torch.nn.functional as nn
 import torch.autograd as autograd
 import torch.optim as optim
@@ -14,17 +15,36 @@ class encoder(torch.nn.Module):
         
         super(encoder, self).__init__()
         
-        self.l0 = torch.nn.Linear(X_dim + y_dim, h_dim, bias=True)
-        self.l1 = torch.nn.ReLU()
-        self.mu = torch.nn.Linear(h_dim, Z_dim, bias=True)
-        self.var = torch.nn.Linear(h_dim, Z_dim, bias=True)
+        self.l0 = nn.Linear(X_dim + y_dim, 3*h_dim, bias=True)
+        self.l1 = nn.ReLU()
+        self.bn = nn.BatchNorm1d(3*h_dim)
+        
+        self.l2 = nn.Linear(3*h_dim, 2*h_dim, bias=True)
+        self.l3 = nn.ReLU()
+        self.bn2 = nn.BatchNorm1d(2*h_dim)
+        
+        self.l4 = nn.Linear(2*h_dim, h_dim, bias=True)
+        self.l5 = nn.ReLU()
+        self.bn3 = nn.BatchNorm1d(h_dim)
+
+        self.mu = nn.Linear(h_dim, Z_dim, bias=True)
+        self.var = nn.Linear(h_dim, Z_dim, bias=True)
         
     def forward(self, inputs):
         
         o0 = self.l0(inputs)
-        o = self.l1(o0)
+        o1 = self.l1(o0)
+        obn = self.bn(o1)
+
+        o2 = self.l2(obn)
+        o3 = self.l3(o2)
+        obn2 = self.bn2(o3)
         
-        o1 = self.mu(o)
-        o2 = self.var(o)
+        o4 = self.l4(obn2)
+        o5 = self.l5(o4)
+        obn3 = self.bn3(o5)
         
-        return o1, o2
+        o6 = self.mu(obn3)
+        o6_ = self.var(obn3)
+        
+        return o6, o6_
