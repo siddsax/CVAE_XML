@@ -28,10 +28,12 @@ parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Ra
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 0 is for gaussian pp')
 parser.add_argument('--s', dest='step', type=int, default=100, help='step for displaying loss')
-parser.add_argument('--b', dest='beta', type=int, default=10, help='Regularization param')
+parser.add_argument('--b', dest='beta', type=int, default=1, help='Regularization param')
 parser.add_argument('--d', dest='disp_flg', type=int, default=1, help='display graphs')
 parser.add_argument('--sve', dest='save', type=int, default=0, help='save models or not')
 parser.add_argument('--ss', dest='save_step', type=int, default=5000, help='gap between model saves')
+parser.add_argument('--mn', dest='model_name', type=str, default='default', help='model name')
+
 args = parser.parse_args()
 
 
@@ -49,17 +51,17 @@ if(args.pca_flag):
     y_tr = pca.transform(y_tr)
     y_te = pca.transform(y_te)
 
-if(args.pp_flg == 0):
-    pp = preprocessing.StandardScaler()
-else:
+if(args.pp_flg):
     pp = preprocessing.MinMaxScaler()
+else:
+    pp = preprocessing.StandardScaler()
+
+loss_fn = torch.nn.BCELoss(size_average=False)
+# loss_fn = torch.nn.MSELoss(size_average=False)
+
 scaler = pp.fit(x_tr)
 x_tr = scaler.transform(x_tr)
 x_te = scaler.transform(x_te)
-scaler = pp.fit(y_tr)
-y_tr = scaler.transform(y_tr)
-y_te = scaler.transform(y_te)
-
 
 X_dim = x_tr.shape[1]
 y_dim = y_tr.shape[1]
@@ -95,12 +97,11 @@ else:
     print("=============== Using CPU =========")
     
 optimizer = optim.Adam(list(P.parameters()) + list(Q.parameters()), lr=args.lr)
-loss_fn = torch.nn.BCEWithLogitsLoss(size_average=False)
-# loss_fn = torch.nn.MSELoss(size_average=False)
 
 
 
 loss_best = 1000.0
+loss_best2 = 1000.0
 for it in range(1000000):
     a = it*args.mb_size%(N-args.mb_size)
     X, c = x_tr[a:a+args.mb_size], y_tr[a:a+args.mb_size]
@@ -115,11 +116,12 @@ for it in range(1000000):
     inp = torch.cat([X, c],1).type(dtype)
     z_mu, z_var  = Q.forward(inp)
     z = sample_z(z_mu, z_var)
-    inp = torch.cat([z, c], 1)
+    inp = torch.cat([z, c], 1).type(dtype)
     X_sample = P.forward(inp)
 
     # Loss
-    recon_loss = loss_fn(X_sample, X) / args.mb_size
+    # recon_loss = loss_fn(X_sample, X) / args.mb_size
+    recon_loss = torch.mean(torch.norm(X_sample - X))# / args.mb_size
     kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_var) + z_mu**2 - 1. - z_var, 1))
     loss = recon_loss + args.beta*kl_loss
 
@@ -145,7 +147,10 @@ for it in range(1000000):
                 loss_old = loss.data
             if(it % 1500 == 0 ):
                 win = viz.line(X=np.arange(it, it + .1), Y=np.arange(0, .1))
-        print('Iter-{}; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(it, loss.data, kl_loss.data, recon_loss.data, loss_best))
+        print('Iter-{}; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(it, loss.data, kl_loss.data, recon_loss.data, loss_best2))
+        
+        if(loss<loss_best2):
+            loss_best2 = loss
         # if(args.plot_flg):
 
         #     fig = plt.figure(figsize=(4, 4))
@@ -160,14 +165,14 @@ for it in range(1000000):
     if args.save:
         
         if it % args.save_step == 0:
-            if not os.path.exists('saved_model/'):
-                os.makedirs('saved_model/')
-            torch.save(P.state_dict(), "saved_model/P_" + str(cnt))
-            torch.save(Q.state_dict(), "saved_model/Q_"+ str(cnt))
+            if not os.path.exists('saved_models/' + args.model_name ):
+                os.makedirs('saved_models/' + args.model_name)
+            torch.save(P.state_dict(), "saved_models/" + args.model_name + "/P_" + str(it))
+            torch.save(Q.state_dict(), "saved_models/" + args.model_name + "/Q_"+ str(it))
             cnt += 1
 
         if(loss<loss_best):
             loss_best = loss
-            torch.save(P.state_dict(), "saved_model/P_best")
-            torch.save(Q.state_dict(), "saved_model/Q_best")
+            torch.save(P.state_dict(), "saved_models/" + args.model_name + "/P_best")
+            torch.save(Q.state_dict(), "saved_models/" + args.model_name + "/Q_best")
 

@@ -23,10 +23,10 @@ In Matlab
 
 
 
-[x, y] = read_data('../FastXML/orig_data/eurlex_train.txt');
 cd '~/fastxml/manik/FastXML'
-addpath('../Tools/matlab/')
 addpath('../tools/')
+addpath('../Tools/matlab/')
+[x, y] = read_data('../FastXML/orig_data/eurlex_train.txt');
 A = .55;
 B = 1.5;
 params.num_thread = 1;
@@ -40,8 +40,20 @@ param.max_leaf = 10;
 
 load '../x_big'
 load '../y_big'
-fastXML_train(x_big, y_big, params, 'model_big')
 
+[I, J, S] = find(x_big);
+[sorted_I, idx] = sort(I);
+J = J(idx);
+S = S(idx);
+x_big = sparse(J, sorted_I, S);
+
+[I, J, S] = find(y_big);
+[sorted_I, idx] = sort(I);
+J = J(idx);
+S = S(idx);
+y_big = sparse(J, sorted_I, S);
+
+fastXML_train(x_big, y_big, params, 'model_big')
 
 [tx, ty] = read_data('../FastXML/orig_data/eurlex_test.txt');
 [score_matrix] = fastXML_test(tx, params, 'model_big');
