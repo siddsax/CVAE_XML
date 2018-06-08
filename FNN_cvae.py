@@ -79,8 +79,6 @@ Q = encoder(X_dim, y_dim, args.h_dim, args.Z_dim)
 
 def sample_z(mu, log_var):
     eps = Variable(torch.randn(args.mb_size, args.Z_dim).type(dtype))
-    # if(torch.cuda.is_available()):
-        # eps.cuda()
     return mu + torch.exp(log_var / 2) * eps
 
 
@@ -105,12 +103,9 @@ loss_best2 = 1000.0
 for it in range(1000000):
     a = it*args.mb_size%(N-args.mb_size)
     X, c = x_tr[a:a+args.mb_size], y_tr[a:a+args.mb_size]
-    # else:
     X = Variable(torch.from_numpy(X.astype('float32')).type(dtype))
     c = Variable(torch.from_numpy(c.astype('float32')).type(dtype))
-    # if(torch.cuda.is_available()):
-    #     X.cuda# = Variable(torch.from_numpy(X.astype('float32')))
-    #     c.cuda# = Variable(torch.from_numpy(c.astype('float32')))
+
         
     # Forward
     inp = torch.cat([X, c],1).type(dtype)
@@ -151,16 +146,14 @@ for it in range(1000000):
         
         if(loss<loss_best2):
             loss_best2 = loss
-        # if(args.plot_flg):
 
-        #     fig = plt.figure(figsize=(4, 4))
-        #     z = z.data.numpy()
-        #     plt.scatter(z[:,0], z[:,1],c=act_test.data.numpy())
-
-        #     if not os.path.exists('out/'):
-        #         os.makedirs('out/')
-
-        #     plt.savefig('out/{}.png'.format(str(cnt).zfill(3)), bbox_inches='tight')
+        if(args.plot_flg):
+            fig = plt.figure(figsize=(4, 4))
+            z = z.data.numpy()
+            plt.scatter(z[:,0], z[:,1],c=act_test.data.numpy())
+            if not os.path.exists('out/'):
+                os.makedirs('out/')
+            plt.savefig('out/{}.png'.format(str(cnt).zfill(3)), bbox_inches='tight')
 
     if args.save:
         

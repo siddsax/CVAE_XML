@@ -1,9 +1,0 @@
-bce gauss
-bce mm
-gauss gauss
-gauss mm
-
-
-1) xavier init
-2) out from final layer
-3) batch norm
