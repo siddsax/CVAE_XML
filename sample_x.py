@@ -63,9 +63,6 @@ x_tr = scaler.transform(x_tr)
 x_te = scaler.transform(x_te)
 
 
-
-
-
 k = np.sum(y_tr, axis=0)
 ksort = k.argsort()
 num_lbls = np.shape(k)[0]
@@ -75,7 +72,7 @@ x = int(np.ceil(np.mean(np.sum(y_tr, axis=1))))
 
 new_y = np.zeros(np.shape(y_tr))#[0], np.shape(y_tr)[1])
 for i in range(np.shape(y_tr)[0]):
-    labels = ksort[:np.sum(k<2)]
+    labels = ksort[:np.sum(k<3)]
     fin_labels = np.random.choice(labels, x, replace=False)
     new_y[i, fin_labels] = 1
     # print(pcaed)
@@ -101,8 +98,11 @@ X_sample = P.forward(inp)
 
 
 new_x = scaler.inverse_transform(X_sample.data)
-np.save('datasets/new_x', np.around(new_x, decimals=4))
-np.save('datasets/new_y', new_y)
+
+if not os.path.exists('datasets/' + args.model_name ):
+    os.makedirs('datasets/' + args.model_name)
+np.save('datasets/' + args.model_name + '/new_x', np.around(new_x, decimals=4))
+np.save('datasets/' + args.model_name + '/new_y', new_y)
 
 
 
