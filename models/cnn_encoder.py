@@ -1,11 +1,14 @@
 import os
+import sys
 import torch
 import random
-import cPickle
+
 import numpy as np
 import torch.nn as nn
 import scipy.sparse as sp
 import torch.optim as optim
+sys.path.insert(0, '../utils')
+
 from w2v import load_word2vec
 import matplotlib.pyplot as plt
 import torch.autograd as autograd
@@ -22,11 +25,11 @@ class Flatten(nn.Module):
         x = x.view(x.size()[0], -1)
         return x
 
-class CNN_encoder(torch.nn.Module):
+class cnn_encoder(torch.nn.Module):
 
     def __init__(self, args):
         # Model Hyperparameters
-        super(CNN_encoder, self).__init__()
+        super(cnn_encoder, self).__init__()
         
         # Model Hyperparameters
         self.sequence_length = args.sequence_length
@@ -36,73 +39,76 @@ class CNN_encoder(torch.nn.Module):
         self.pooling_units = args.pooling_units
         self.pooling_type = args.pooling_type
         self.hidden_dims = args.hidden_dims
-
+        self.Z_dim = args.Z_dim
         # Training Hyperparameters
         self.batch_size = args.batch_size
         self.num_epochs = args.num_epochs
 
         # Model variation and w2v pretrain type
         self.model_variation = args.model_variation        # CNN-rand | CNN-pretrain
-        self.pretrain_type = args.pretrain_type
-
+        self.vocab_size = args.vocab_size
         # Fix random seed
-        # np.random.seed(1126)
-        # random.seed(1126)
-        # self.rng = T.shared_randomstreams.RandomStreams(seed=1126)
 
-        self.l0 = nn.Linear(self.vocab_size, self.embedding_dim, bias=True)
         if self.model_variation == 'pretrain':
-            self.l0.weights = self.embedding_weights
-        self.drp0 = mm.Dropout(p=.25)
+            self.l0 = nn.Embedding(self.vocab_size, self.embedding_dim, _weight=self.embedding_weights)
+        else:
+            self.l0 = nn.Embedding(self.vocab_size, self.embedding_dim)
+
+        self.drp0 = nn.Dropout(p=.25)
 
         self.conv_layers = []
         self.pool_layers = []
+
+        self.relu = nn.ReLU()
+        fin_l_out_size = 0
         for fsz in self.filter_sizes:
-            l_conv = nn.Conv1d(1, self.num_filters, fsz, stride=2, bias=True)
-            self.conv_layers.append(l_conv)
-            l_out_size = out_size(l_in, 0, 1, fsz, 2)
+            l_out_size = out_size(self.sequence_length, 0, 1, fsz, 2)
             pool_size = l_out_size // self.pooling_units
-            
+            print(fin_l_out_size)
+            print(l_out_size)
+            l_conv = nn.Conv1d(self.embedding_dim, self.num_filters, fsz, stride=2, bias=True)
             if self.pooling_type == 'average':
                 l_pool = nn.AvgPool1d(pool_size, stride=None, count_include_pad=True)
-                # l_pool = lasagne.layers.Pool1DLayer(l_conv, pool_size, stride=None, mode='average_inc_pad')
+                fin_l_out_size += int((l_out_size*self.num_filters - pool_size)/pool_size) + 1
             elif self.pooling_type == 'max':
                 l_pool = nn.MaxPool1d(2, stride=1)
+                fin_l_out_size += int((l_out_size*self.num_filters - 2)) + 1
 
+            self.conv_layers.append(l_conv)
             self.pool_layers.append(l_pool)
-    
+        
+        print(fin_l_out_size)
+        self.bn = nn.BatchNorm1d(fin_l_out_size)
+        self.mu = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
+        self.var = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
+
     def forward(self, inputs):
 
         o = self.l0(inputs)
         o0 = self.drp0(o)
 
         conv_out = []
-        for fsz in range(len(self.filter_sizes)):
-            o = self.conv_layers[i](o0)
+
+        for i in range(len(self.filter_sizes)):
+
+            o = o0.permute(0,2,1)
+            o = self.relu(self.conv_layers[i](o))
+            o = o.view(o.shape[0], 1, o.shape[1]*o.shape[2])
             o = self.pool_layers[i](o)
-            o = o.view(-1,1)
+            o = o.view(o.shape[0],-1)
             conv_out.append(o)
 
-        # for fsz in self.filter_sizes:
-        #     l_conv = lasagne.layers.Conv1DLayer(l_embed_dropout,
-        #                                         num_filters=self.num_filters,
-        #                                         filter_size=fsz)
-        #     l_conv_shape = lasagne.layers.get_output_shape(l_conv)
-        #     pool_size = l_conv_shape[-1] // self.pooling_units
-        #     if self.pooling_type == 'average':
-        #         l_pool = lasagne.layers.Pool1DLayer(l_conv, pool_size, stride=None, mode='average_inc_pad')
-        #     elif self.pooling_type == 'max':
-        #         l_pool = lasagne.layers.MaxPool1DLayer(l_conv, 2, stride=1)
-        #     else:
-        #         raise NotImplementedError('Unknown pooling_type!')
-            # l_flat = lasagne.layers.flatten(l_pool)
-            # convs.append(l_flat)
         if len(self.filter_sizes)>1:
-            conv_out = torch.cat(conv_out)
+            conv_out = torch.cat(conv_out,1)
         else:
             conv_out = convs[0]
-
-        return conv_out
+        
+        print(conv_out)
+        o = self.bn(conv_out)
+        o1 = self.mu(o)
+        o2 = self.var(o)
+        
+        return o1,o2
         # Final hidden layer
         # l_hidden = lasagne.layers.DenseLayer(l_conv_final, num_units=self.hidden_dims, nonlinearity=lasagne.nonlinearities.rectify)
         # l_hidden_dropout = lasagne.layers.DropoutLayer(l_hidden, p=0.5)
