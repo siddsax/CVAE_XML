@@ -30,7 +30,6 @@ viz = Visdom()
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
 parser.add_argument('--zd', dest='Z_dim', type=int, default=500, help='Latent layer dimension')
-# parser.add_argument('--mb', dest='mb_size', type=int, default=10, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=750, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
@@ -52,7 +51,7 @@ parser.add_argument('--pooling_type', help='max or average', type=str, default='
 parser.add_argument('--hidden_dims', help='number of hidden units', type=int, default=512)
 parser.add_argument('--model_variation', help='model variation: CNN-rand or CNN-pretrain', type=str, default='pretrain')
 parser.add_argument('--pretrain_type', help='pretrain model: GoogleNews or glove', type=str, default='glove')
-parser.add_argument('--batch_size', help='number of batch size', type=int, default=256)
+parser.add_argument('--batch_size', help='number of batch size', type=int, default=45)
 parser.add_argument('--num_epochs', help='number of epcohs for training', type=int, default=50)
 parser.add_argument('--vocab_size', help='size of vocabulary keeping the most frequent words', type=int, default=30000)
 parser.add_argument('--training', help='training means 1, testing means 0', type=int, default=1)
@@ -64,17 +63,11 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def effective_k(k, d):
-    """
-    :param k: kernel width
-    :param d: dilation size
-    :return: effective kernel width when dilation is performed
-    """
     return (k - 1) * d + 1
 
 def sample_z(mu, log_var):
-    eps = Variable(torch.randn(params.batch_size, params.Z_dim).type(dtype))
+    eps = Variable(torch.randn(params.batch_size, params.Z_dim).type(dtype_f))
     return mu + torch.exp(log_var / 2) * eps
-
 
 def gen_model_file(params):
     data_name = params.data_path.split('/')[-2]
@@ -96,12 +89,15 @@ def load_data(params):
 
 if(torch.cuda.is_available()):
     use_cuda = 1
-    dtype = torch.cuda.FloatTensor
+    dtype_f = torch.cuda.FloatTensor
+    dtype_i = torch.cuda.LongTensor
     print("--------------- Using GPU! ---------")
 else:
     use_cuda = 0
-    dtype = torch.FloatTensor
+    dtype_f = torch.FloatTensor
+    dtype_i = torch.LongTensor
     print("=============== Using CPU =========")
+
 params.decoder_kernels = [(400, params.Z_dim + params.embedding_dim, 3),
                                 (450, 400, 3),
                                 (500, 450, 3)]
@@ -157,10 +153,17 @@ params.vocab_size = len(vocabulary)
 emb = embedding_layer(params, embedding_weights)
 enc = cnn_encoder(params)
 dec = cnn_decoder(params)
+
 if use_cuda:
     emb.cuda()
     enc.cuda()
     dec.cuda()
+
+    print(emb)
+    print(enc)
+    print(dec)
+    print("%"*100)
+print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(emb), count_parameters(enc), count_parameters(dec)))
 
 go_row = np.ones((params.batch_size,1))*vocabulary[params.go_token]
 end_row = np.ones((params.batch_size,1))*vocabulary[params.end_token]
@@ -179,9 +182,9 @@ if(params.training):
         decoder_word_input = np.concatenate((go_row,batch_x), axis=1)
         decoder_target = np.concatenate((batch_x, end_row), axis=1)
 
-        batch_x = Variable(torch.from_numpy(batch_x.astype('int')))
-        decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')))
-        decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')))
+        batch_x = Variable(torch.from_numpy(batch_x.astype('int')).type(dtype_i))
+        decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')).type(dtype_i))
+        decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(dtype_i))
 
         
         e_emb = emb.forward(batch_x)
@@ -194,7 +197,7 @@ if(params.training):
 
         logits = logits.view(-1, params.vocab_size)
         decoder_target = decoder_target.view(-1, 1)
-        decoder_target_onehot = torch.FloatTensor(decoder_target.shape[0], params.vocab_size)
+        decoder_target_onehot = torch.FloatTensor(decoder_target.shape[0], params.vocab_size).type(dtype_f)
         decoder_target_onehot.zero_()
         decoder_target_onehot.scatter_(1, decoder_target, 1)
         cross_entropy = loss_fn(logits, decoder_target_onehot)
@@ -216,12 +219,12 @@ if(params.training):
 
 else:
     seed = np.random.normal(size=[1, params.Z_dim])
-    seed = Variable(torch.from_numpy(seed).float())
+    seed = Variable(torch.from_numpy(seed).float().type(dtype_f))
     if use_cuda:
         seed = seed.cuda()
 
     decoder_word_input_np, _ = batch_loader.go_input(1)
-    decoder_word_input = Variable(torch.from_numpy(decoder_word_input_np).long())
+    decoder_word_input = Variable(torch.from_numpy(decoder_word_input_np).long().type(dtype_i))
 
     if use_cuda:
         decoder_word_input = decoder_word_input.cuda()
