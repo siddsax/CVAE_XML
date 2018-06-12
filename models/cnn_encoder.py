@@ -15,9 +15,9 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 import matplotlib.gridspec as gridspec
 
-def out_size(l_in, padding, dilation, kernel_size, stride):
-    a = l_in + 2*padding - dilation*(kernel_size - 1) -1
-    b = a/stride
+def out_size(l_in, kernel_size, padding=0, dilation=1, stride=1):
+    a = l_in + 2*padding - dilation*(kernel_size - 1) - 1
+    b = int(a/stride)
     return b + 1
 
 class Flatten(nn.Module):
@@ -45,14 +45,9 @@ class cnn_encoder(torch.nn.Module):
         self.num_epochs = args.num_epochs
 
         # Model variation and w2v pretrain type
-        self.model_variation = args.model_variation        # CNN-rand | CNN-pretrain
         self.vocab_size = args.vocab_size
         # Fix random seed
 
-        if self.model_variation == 'pretrain':
-            self.l0 = nn.Embedding(self.vocab_size, self.embedding_dim, _weight=self.embedding_weights)
-        else:
-            self.l0 = nn.Embedding(self.vocab_size, self.embedding_dim)
 
         self.drp0 = nn.Dropout(p=.25)
 
@@ -61,65 +56,63 @@ class cnn_encoder(torch.nn.Module):
 
         self.relu = nn.ReLU()
         fin_l_out_size = 0
+        print("Input to this layer = ({0},{1},{2})".format(self.batch_size,self.embedding_dim, self.sequence_length ))
+        print("#"*50)
         for fsz in self.filter_sizes:
-            l_out_size = out_size(self.sequence_length, 0, 1, fsz, 2)
+            l_out_size = out_size(self.sequence_length, fsz, stride=2)# l_in, kernel_size, padding=0, dilation=1, stride=1
             pool_size = l_out_size // self.pooling_units
-            print(fin_l_out_size)
-            print(l_out_size)
-            l_conv = nn.Conv1d(self.embedding_dim, self.num_filters, fsz, stride=2, bias=True)
+            # print(fin_l_out_size)
+            # print(l_out_size)
+            l_conv = nn.Conv1d(self.embedding_dim, self.num_filters, fsz, stride=2)
+            print(l_out_size*self.num_filters)
             if self.pooling_type == 'average':
                 l_pool = nn.AvgPool1d(pool_size, stride=None, count_include_pad=True)
-                fin_l_out_size += int((l_out_size*self.num_filters - pool_size)/pool_size) + 1
+                fin_l_out_size += (int((l_out_size - pool_size)/pool_size) + 1)*self.num_filters
             elif self.pooling_type == 'max':
                 l_pool = nn.MaxPool1d(2, stride=1)
-                fin_l_out_size += int((l_out_size*self.num_filters - 2)) + 1
+                fin_l_out_size += (int(l_out_size*self.num_filters - 2) + 1)
+                print((int(l_out_size*self.num_filters - 2) + 1))
+                
+                print('-'*50)
 
             self.conv_layers.append(l_conv)
             self.pool_layers.append(l_pool)
+        print("*"*50)
         
-        print(fin_l_out_size)
+        # print(fin_l_out_size)
         self.bn = nn.BatchNorm1d(fin_l_out_size)
         self.mu = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
         self.var = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
 
     def forward(self, inputs):
 
-        o = self.l0(inputs)
-        o0 = self.drp0(o)
+        o0 = self.drp0(inputs)
 
         conv_out = []
-
+        k = 0
         for i in range(len(self.filter_sizes)):
 
             o = o0.permute(0,2,1)
+            print(o.shape)
+            print("#"*50)
             o = self.relu(self.conv_layers[i](o))
             o = o.view(o.shape[0], 1, o.shape[1]*o.shape[2])
+            print(o.shape)
             o = self.pool_layers[i](o)
             o = o.view(o.shape[0],-1)
+            print(o.shape)
+            print('-'*50)
+            # k = 
             conv_out.append(o)
 
+        print("+"*50)
         if len(self.filter_sizes)>1:
             conv_out = torch.cat(conv_out,1)
         else:
             conv_out = convs[0]
         
-        print(conv_out)
         o = self.bn(conv_out)
         o1 = self.mu(o)
         o2 = self.var(o)
         
         return o1,o2
-        # Final hidden layer
-        # l_hidden = lasagne.layers.DenseLayer(l_conv_final, num_units=self.hidden_dims, nonlinearity=lasagne.nonlinearities.rectify)
-        # l_hidden_dropout = lasagne.layers.DropoutLayer(l_hidden, p=0.5)
-
-        # l_y = lasagne.layers.DenseLayer(l_hidden_dropout, num_units=self.output_dim, nonlinearity=lasagne.nonlinearities.sigmoid)
-        # params = lasagne.layers.get_all_params(l_y, trainable=True)
-        # self.network = l_y
-
-        # # Objective function and update params
-        # Y_pred = lasagne.layers.get_output(l_y)
-        # loss = lasagne.objectives.binary_crossentropy(Y_pred, Y).mean()
-        # updates = lasagne.updates.adam(loss, params)
-        # self.train_fn = theano.function([inputs, Y], [loss], updates=updates)
-
