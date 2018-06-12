@@ -7,3 +7,4 @@ data_xml.zip
 saved_model
 saved_models/
 outputs
+word2vec_models/

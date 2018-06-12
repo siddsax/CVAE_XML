@@ -29,18 +29,24 @@ def clean_str(string):
     return string.strip().lower()
 
 
-def pad_sentences(sentences, padding_word="<PAD/>", max_length=500):
-    sequence_length = min(max(len(x) for x in sentences), max_length)
-    padded_sentences = []
-    for i in range(len(sentences)):
-        sentence = sentences[i]
-        if len(sentence) < max_length:
-            num_padding = sequence_length - len(sentence)
-            new_sentence = sentence + [padding_word] * num_padding
-        else:
-            new_sentence = sentence[:max_length]
-        padded_sentences.append(new_sentence)
-    return padded_sentences
+def pad_sentences(sentence_sets, padding_word="<PAD/>", max_length=500):
+    sequence_length = 0
+    for sentences in sentence_sets:
+        sequence_length = max(min(max(len(x) for x in sentences), max_length), sequence_length)
+    
+    padded_sentence_sets = []
+    for sentences in sentence_sets:
+        padded_sentences = []
+        for i in range(len(sentences)):
+            sentence = sentences[i]
+            if len(sentence) < max_length:
+                num_padding = sequence_length - len(sentence)
+                new_sentence = sentence + [padding_word] * num_padding
+            else:
+                new_sentence = sentence[:max_length]
+            padded_sentences.append(new_sentence)
+        padded_sentence_sets.append(padded_sentences)
+    return padded_sentence_sets, sequence_length
 
 
 def load_data_and_labels(data):
@@ -60,13 +66,18 @@ def load_data_and_labels(data):
     return [x_text, Y]
 
 
-def build_vocab(sentences, vocab_size=50000):
+def build_vocab(sentences, params, vocab_size=50000):
     word_counts = Counter(itertools.chain(*sentences))
     vocabulary_inv = [x[0] for x in word_counts.most_common(vocab_size)]
     vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
     # append <UNK/> symbol to the vocabulary
     vocabulary['<UNK/>'] = len(vocabulary)
     vocabulary_inv.append('<UNK/>')
+    vocabulary[params.go_token] = len(vocabulary)
+    vocabulary_inv.append(params.go_token)
+    vocabulary[params.end_token] = len(vocabulary)
+    vocabulary_inv.append(params.end_token)
+
     return [vocabulary, vocabulary_inv]
 
 
@@ -76,9 +87,9 @@ def build_input_data(sentences, vocabulary):
     return x
 
 
-def load_data(data_path, max_length=500, vocab_size=50000):
+def load_data(params, max_length=500, vocab_size=50000):
     # Load and preprocess data
-    with open(os.path.join(data_path), 'rb') as fin:
+    with open(os.path.join(params.data_path), 'rb') as fin:
         [train, test, vocab, catgy] = pickle.load(fin)
 
     # dirty trick to prevent errors happen when test is empty
@@ -87,12 +98,12 @@ def load_data(data_path, max_length=500, vocab_size=50000):
 
     trn_sents, Y_trn = load_data_and_labels(train)
     tst_sents, Y_tst = load_data_and_labels(test)
-    trn_sents_padded = pad_sentences(trn_sents, max_length=max_length)
-    tst_sents_padded = pad_sentences(tst_sents, max_length=max_length)
-    vocabulary, vocabulary_inv = build_vocab(trn_sents_padded + tst_sents_padded, vocab_size=vocab_size)
-    X_trn = build_input_data(trn_sents_padded, vocabulary)
-    X_tst = build_input_data(tst_sents_padded, vocabulary)
-    return X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv
+    sents_padded_sets, params.sequence_length = pad_sentences([trn_sents, tst_sents] , padding_word=params.pad_token, max_length=max_length)
+    # tst_sents_padded = pad_sentences(tst_sents, padding_word=params.pad_token, max_length=max_length)
+    vocabulary, vocabulary_inv = build_vocab(sents_padded_sets[0] + sents_padded_sets[1], params, vocab_size=vocab_size)
+    X_trn = build_input_data(sents_padded_sets[0], vocabulary)
+    X_tst = build_input_data(sents_padded_sets[1], vocabulary)
+    return X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params
     # return X_trn, Y_trn, vocabulary, vocabulary_inv
 
 
