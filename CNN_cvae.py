@@ -7,6 +7,8 @@ import numpy as np
 sys.path.insert(0, 'utils')
 sys.path.insert(0, 'models')
 import data_helpers 
+from perplexity import Perplexity
+
 import torch.nn as nn
 from w2v import *
 from visdom import Visdom
@@ -54,8 +56,12 @@ parser.add_argument('--batch_size', help='number of batch size', type=int, defau
 parser.add_argument('--num_epochs', help='number of epcohs for training', type=int, default=50)
 parser.add_argument('--vocab_size', help='size of vocabulary keeping the most frequent words', type=int, default=30000)
 parser.add_argument('--training', help='training means 1, testing means 0', type=int, default=1)
+parser.add_argument('--drop_prob', help='Dropout probability', type=int, default=.5)
+
 params = parser.parse_args()
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def effective_k(k, d):
     """
@@ -90,9 +96,11 @@ def load_data(params):
 
 if(torch.cuda.is_available()):
     use_cuda = 1
+    dtype = torch.cuda.FloatTensor
     print("--------------- Using GPU! ---------")
 else:
     use_cuda = 0
+    dtype = torch.FloatTensor
     print("=============== Using CPU =========")
 params.decoder_kernels = [(400, params.Z_dim + params.embedding_dim, 3),
                                 (450, 400, 3),
@@ -157,6 +165,9 @@ if use_cuda:
 go_row = np.ones((params.batch_size,1))*vocabulary[params.go_token]
 end_row = np.ones((params.batch_size,1))*vocabulary[params.end_token]
 
+loss_fn = torch.nn.BCELoss(size_average=False)
+perplexity = Perplexity()
+optimizer = optim.Adam(list(emb.parameters()) + list(enc.parameters()) + list(dec.parameters()), lr=params.lr)
 
 if(params.training):
     for i in range(params.num_epochs):
@@ -170,24 +181,30 @@ if(params.training):
 
         batch_x = Variable(torch.from_numpy(batch_x.astype('int')))
         decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')))
+        decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')))
+
+        
         e_emb = emb.forward(batch_x)
         z_mu, z_lvar = enc.forward(e_emb)
         z = sample_z(z_mu, z_lvar)
         decoder_input = emb.forward(decoder_word_input)
-        logits = dec.forward(decoder_input, z, .5)
+        logits = dec.forward(decoder_input, z)
 
         kld = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
 
         logits = logits.view(-1, params.vocab_size)
-        decoder_target = target.view(-1)
-        cross_entropy = nn.cross_entropy(logits, decoder_target)
+        decoder_target = decoder_target.view(-1, 1)
+        decoder_target_onehot = torch.FloatTensor(decoder_target.shape[0], params.vocab_size)
+        decoder_target_onehot.zero_()
+        decoder_target_onehot.scatter_(1, decoder_target, 1)
+        cross_entropy = loss_fn(logits, decoder_target_onehot)
 
         # since cross enctropy is averaged over seq_len, it is necessary to approximate new kld
         loss = 79 * cross_entropy + kld
 
         logits = logits.view(params.batch_size, -1, params.vocab_size)
-        target = target.view(params.batch_size, -1)
-        ppl = perplexity(logits, target).mean()
+        decoder_target = decoder_target.view(params.batch_size, -1)
+        ppl = perplexity(logits, decoder_target).mean()
 
         optimizer.zero_grad()
         loss.backward()
