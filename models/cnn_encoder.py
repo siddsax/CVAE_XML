@@ -25,6 +25,13 @@ class Flatten(nn.Module):
         x = x.view(x.size()[0], -1)
         return x
 
+def weights_init(m):
+    # if isinstance(m, nn.Conv1d):
+    #     torch.nn.init.xavier_uniform(m.weight.data)
+    #     torch.nn.init.xavier_uniform(m.bias.data)
+    # else:
+    torch.nn.init.xavier_uniform(m.weight.data)
+
 class cnn_encoder(torch.nn.Module):
 
     def __init__(self, args):
@@ -46,23 +53,25 @@ class cnn_encoder(torch.nn.Module):
 
         # Model variation and w2v pretrain type
         self.vocab_size = args.vocab_size
-        self.conv_layers = []
-        self.pool_layers = []
+        self.conv_layers = nn.ModuleList()
+        self.pool_layers = nn.ModuleList()
 
         fin_l_out_size = 0
 
-        self.drp0 = nn.Dropout(p=.25)
-        self.relu = nn.ReLU()
+        self.drp0 = nn.DataParallel(nn.Dropout(p=.25))
+        self.relu = nn.DataParallel(nn.ReLU())
         for fsz in self.filter_sizes:
             l_out_size = out_size(self.sequence_length, fsz, stride=2)
             pool_size = l_out_size // self.pooling_units
 
             l_conv = nn.Conv1d(self.embedding_dim, self.num_filters, fsz, stride=2)
+            weights_init(l_conv)
+            l_conv = nn.DataParallel(l_conv)
             if self.pooling_type == 'average':
-                l_pool = nn.AvgPool1d(pool_size, stride=None, count_include_pad=True)
+                l_pool = nn.DataParallel(nn.AvgPool1d(pool_size, stride=None, count_include_pad=True))
                 fin_l_out_size += (int((l_out_size - pool_size)/pool_size) + 1)*self.num_filters
             elif self.pooling_type == 'max':
-                l_pool = nn.MaxPool1d(2, stride=1)
+                l_pool = nn.DataParallel(nn.MaxPool1d(2, stride=1))
                 fin_l_out_size += (int(l_out_size*self.num_filters - 2) + 1)
 
             self.conv_layers.append(l_conv)
@@ -71,6 +80,11 @@ class cnn_encoder(torch.nn.Module):
         self.bn = nn.BatchNorm1d(fin_l_out_size)
         self.mu = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
         self.var = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
+
+        weights_init(self.var)
+        weights_init(self.mu)
+        self.mu = nn.DataParallel(self.mu)
+        self.var = nn.DataParallel(self.var)
 
     def forward(self, inputs):
 
@@ -81,7 +95,8 @@ class cnn_encoder(torch.nn.Module):
         for i in range(len(self.filter_sizes)):
 
             o = o0.permute(0,2,1)
-            o = self.relu(self.conv_layers[i](o))
+            o = self.conv_layers[i](o)
+            o = self.relu(o)
             o = o.view(o.shape[0], 1, o.shape[1]*o.shape[2])
             o = self.pool_layers[i](o)
             o = o.view(o.shape[0],-1)
@@ -90,7 +105,7 @@ class cnn_encoder(torch.nn.Module):
         if len(self.filter_sizes)>1:
             conv_out = torch.cat(conv_out,1)
         else:
-            conv_out = convs[0]
+            conv_out = conv_out[0]
         
         o = self.bn(conv_out)
         o1 = self.mu(o)
