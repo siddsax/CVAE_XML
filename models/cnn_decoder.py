@@ -30,11 +30,9 @@ class cnn_decoder(nn.Module):
         self.params = params
         self.out_size = self.params.decoder_kernels[-1][0]
 
-        self.fc = nn.Linear(self.out_size, self.params.vocab_size)
-        weights_init(self.fc)
-        self.fc = nn.DataParallel(self.fc)
-        self.conv_layers = nn.ModuleList()
+        self.drp = nn.DataParallel(nn.Dropout(p=params.drop_prob))
 
+        self.conv_layers = nn.ModuleList()
         for layer in range(len(params.decoder_kernels)):
             [out_chan, in_chan, width] = params.decoder_kernels[layer]
             layer = nn.Conv1d(in_chan, out_chan, width,
@@ -44,8 +42,11 @@ class cnn_decoder(nn.Module):
             layer = nn.DataParallel(layer)
             self.conv_layers.append(layer)
         
-        self.drp = nn.DataParallel(nn.Dropout(p=params.drop_prob))
         self.relu = nn.DataParallel(nn.ReLU())
+        
+        self.fc = nn.Linear(self.out_size, self.params.vocab_size)
+        weights_init(self.fc)
+        self.fc = nn.DataParallel(self.fc)
         self.sigmoid = nn.DataParallel(nn.Sigmoid()) 
     
     def forward(self, decoder_input, z):
@@ -56,7 +57,6 @@ class cnn_decoder(nn.Module):
         decoder_input = self.drp(decoder_input)
 
         x = decoder_input.transpose(1, 2).contiguous()
-
         for layer in range(len(self.params.decoder_kernels)):
             x = self.conv_layers[layer](x)
             x_width = x.size()[2]
@@ -67,6 +67,9 @@ class cnn_decoder(nn.Module):
         x = x.transpose(1, 2).contiguous()
         x = x.view(-1, self.out_size)
         x = self.fc(x)
-        result = x.view(-1, seq_len, self.params.vocab_size)
-        result = self.sigmoid(result)
-        return result
+        x = x.view(-1, seq_len, self.params.vocab_size)
+        # print(x.shape)
+        x = self.sigmoid(x)
+        # print(x)
+        # sys.exit()
+        return x
