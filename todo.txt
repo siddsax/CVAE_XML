@@ -1,11 +1,11 @@
-see how the data is inputed to the decoder
-change the input in the decoder to an embedding layer
+
+
 
 see difference in the encoder and decoder
 see how to sample text at test time
 
-padding before go and end or vice versa
 
-run auto encoder 
+
+
 
 convert to conditional auto encoder, both ways code first
