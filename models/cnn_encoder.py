@@ -103,11 +103,11 @@ class cnn_encoder(torch.nn.Module):
             conv_out.append(o)
 
         if len(self.filter_sizes)>1:
-            conv_out = torch.cat(conv_out,1)
+            o = torch.cat(conv_out,1)
         else:
-            conv_out = conv_out[0]
+            o = conv_out[0]
         
-        o = self.bn(conv_out)
+        o = self.bn(o)
         o1 = self.mu(o)
         o2 = self.var(o)
         
