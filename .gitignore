@@ -8,3 +8,6 @@ saved_model
 saved_models/
 outputs
 word2vec_models/
+clusterings
+*.mat
+*.npy
