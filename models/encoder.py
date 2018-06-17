@@ -30,11 +30,11 @@ class encoder(torch.nn.Module):
         self.mu = nn.Linear(h_dim, Z_dim, bias=True)
         self.var = nn.Linear(h_dim, Z_dim, bias=True)
         
-        torch.nn.init.xavier_uniform(self.l0.weight)
-        torch.nn.init.xavier_uniform(self.l2.weight)
-        torch.nn.init.xavier_uniform(self.l4.weight)
-        torch.nn.init.xavier_uniform(self.mu.weight)
-        torch.nn.init.xavier_uniform(self.var.weight)
+        torch.nn.init.xavier_uniform_(self.l0.weight)
+        torch.nn.init.xavier_uniform_(self.l2.weight)
+        torch.nn.init.xavier_uniform_(self.l4.weight)
+        torch.nn.init.xavier_uniform_(self.mu.weight)
+        torch.nn.init.xavier_uniform_(self.var.weight)
         
         self.l0 = nn.DataParallel(self.l0)
         self.l2 = nn.DataParallel(self.l2)

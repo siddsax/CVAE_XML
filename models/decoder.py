@@ -31,10 +31,10 @@ class decoder(torch.nn.Module):
         # self.l7 = nn.ReLU()
         self.l7 = nn.Sigmoid()
 
-        torch.nn.init.xavier_uniform(self.l0.weight)
-        torch.nn.init.xavier_uniform(self.l2.weight)
-        torch.nn.init.xavier_uniform(self.l4.weight)
-        torch.nn.init.xavier_uniform(self.l6.weight)
+        torch.nn.init.xavier_uniform_(self.l0.weight)
+        torch.nn.init.xavier_uniform_(self.l2.weight)
+        torch.nn.init.xavier_uniform_(self.l4.weight)
+        torch.nn.init.xavier_uniform_(self.l6.weight)
 
         self.l0 = nn.DataParallel(self.l0)
         self.l2 = nn.DataParallel(self.l2)

@@ -1,0 +1,12 @@
+1) Label subsets created via clustering (via SLEEC, normal KMeans fails miserably) make sense to a reasonable extent, there 
+    are some labels in clusters but they are limited to at most one or two some 
+    clusters ( say with 12-20 labels in each cluster). While also not being common 
+    sensical that each cluster has labels that co-occur always
+
+2) TF_IDF data is sparse, out of 5000, say 200 have some value and all others are zero. This is 
+    not being translated to generated data, which has much more spread out values with lower maximum 
+    value as well. 
+
+3) The data being created is not having much sense more often than not, Even though the labels do. It is possible 
+    however that the important features get lost in a sea of unimportant ones as the features are not sparse or 
+    Fast-XML suffers on data that is not sparse. 
