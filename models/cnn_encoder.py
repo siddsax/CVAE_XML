@@ -30,7 +30,7 @@ def weights_init(m):
     #     torch.nn.init.xavier_uniform(m.weight.data)
     #     torch.nn.init.xavier_uniform(m.bias.data)
     # else:
-    torch.nn.init.xavier_uniform(m.weight.data)
+    torch.nn.init.xavier_uniform_(m.weight.data)
 
 class cnn_encoder(torch.nn.Module):
 
@@ -39,6 +39,7 @@ class cnn_encoder(torch.nn.Module):
         super(cnn_encoder, self).__init__()
         
         # Model Hyperparameters
+        self.params = args
         self.sequence_length = args.sequence_length
         self.embedding_dim = args.embedding_dim
         self.filter_sizes = args.filter_sizes
@@ -64,6 +65,7 @@ class cnn_encoder(torch.nn.Module):
             l_out_size = out_size(self.sequence_length, fsz, stride=2)
             pool_size = l_out_size // self.pooling_units
 
+            # l_conv = nn.Conv1d(self.embedding_dim + args.classes, self.num_filters, fsz, stride=2)
             l_conv = nn.Conv1d(self.embedding_dim, self.num_filters, fsz, stride=2)
             weights_init(l_conv)
             l_conv = nn.DataParallel(l_conv)
@@ -77,17 +79,23 @@ class cnn_encoder(torch.nn.Module):
             self.conv_layers.append(l_conv)
             self.pool_layers.append(l_pool)
         
-        self.bn = nn.BatchNorm1d(fin_l_out_size)
+        self.bn1 = nn.BatchNorm1d(fin_l_out_size)
+        # self.fc = nn.Linear(fin_l_out_size + args.classes, fin_l_out_size, bias=True)
+        # self.bn2 = nn.BatchNorm1d(fin_l_out_size)
         self.mu = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
         self.var = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
 
+        # weights_init(self.fc)
         weights_init(self.var)
         weights_init(self.mu)
+        # self.fc = nn.DataParallel(self.fc)
         self.mu = nn.DataParallel(self.mu)
         self.var = nn.DataParallel(self.var)
 
-    def forward(self, inputs):
-
+    def forward(self, inputs, batch_y):
+        # [batch_size, seq_len, embed_size] = inputs.size()
+        # batch_y = torch.cat([batch_y] * seq_len, 1).view(batch_size, seq_len, self.params.classes)
+        # inputs = torch.cat([inputs, batch_y], 2)
         o0 = self.drp0(inputs)
 
         conv_out = []
@@ -101,14 +109,20 @@ class cnn_encoder(torch.nn.Module):
             o = self.pool_layers[i](o)
             o = o.view(o.shape[0],-1)
             conv_out.append(o)
-
+            del o
+        
+        del o0
+        
         if len(self.filter_sizes)>1:
             o = torch.cat(conv_out,1)
         else:
             o = conv_out[0]
+        del conv_out
+        o = self.bn1(o)
+        # o = self.fc(torch.cat([batch_y, o], 1))
+        # o = self.bn2(o)
+        # o1 = self.mu(o)
+        # o2 = self.var(o)
+        # del o
         
-        o = self.bn(o)
-        o1 = self.mu(o)
-        o2 = self.var(o)
-        
-        return o1,o2
+        return self.mu(o),self.var(o)

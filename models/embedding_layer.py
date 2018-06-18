@@ -22,6 +22,7 @@ class embedding_layer(torch.nn.Module):
         self.l = nn.Embedding(params.vocab_size, params.embedding_dim)
         if params.model_variation == 'pretrain':
             self.l.weight.data.copy_(torch.from_numpy(embedding_weights))
+            self.l.weight.requires_grad=False
 
             # .weight = nn.Parameter(embedding_weights)
         self.l = nn.DataParallel(self.l)

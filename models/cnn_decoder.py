@@ -15,13 +15,36 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 import matplotlib.gridspec as gridspec
 from torch.nn import Parameter
+import subprocess
+
+def get_gpu_memory_map(i, boom):
+    """Get the current gpu usage.
+
+    Returns
+    -------
+    usage: dict
+        Keys are device ids as integers.
+        Values are memory usage as integers in MB.
+    """
+    result = subprocess.check_output(
+        [
+            'nvidia-smi', '--query-gpu=memory.used',
+            '--format=csv,nounits,noheader'
+        ])
+    # Convert lines into a dictionary
+    gpu_memory = [int(x) for x in result.strip().split('\n')]
+    gpu_memory_map = dict(zip(range(len(gpu_memory)), gpu_memory))
+    print("In Decoder:: Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, get_gpu_memory_map(0), \
+    get_gpu_memory_map(1), get_gpu_memory_map(2), get_gpu_memory_map(3)))
+    return boom+1
+
 
 def weights_init(m):
     # if isinstance(m, nn.Conv1d):
     #     torch.nn.init.xavier_uniform(m.weight.data)
     #     torch.nn.init.xavier_uniform(m.bias.data)
     # else:
-    torch.nn.init.xavier_uniform(m.weight.data)
+    torch.nn.init.xavier_uniform_(m.weight.data)
 
 class cnn_decoder(nn.Module):
     def __init__(self, params):
@@ -42,34 +65,32 @@ class cnn_decoder(nn.Module):
             layer = nn.DataParallel(layer)
             self.conv_layers.append(layer)
         
-        self.relu = nn.DataParallel(nn.ReLU())
+        # self.relu = nn.DataParallel(nn.ReLU())
+        # self.relu2 = nn.DataParallel(nn.ReLU())
         
         self.fc = nn.Linear(self.out_size, self.params.vocab_size)
         weights_init(self.fc)
         self.fc = nn.DataParallel(self.fc)
         self.sigmoid = nn.DataParallel(nn.Sigmoid()) 
     
-    def forward(self, decoder_input, z):
-
+    def forward(self, decoder_input, z, batch_y):
+        boom = 1
         [batch_size, seq_len, embed_size] = decoder_input.size()
-        z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim)
+
+        z = torch.cat([z, batch_y], 1)
+        z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim + self.params.classes)
         decoder_input = torch.cat([decoder_input, z], 2)
         decoder_input = self.drp(decoder_input)
-
         x = decoder_input.transpose(1, 2).contiguous()
+
         for layer in range(len(self.params.decoder_kernels)):
             x = self.conv_layers[layer](x)
             x_width = x.size()[2]
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
-            x = self.relu(x)
-
+            nn.functional.relu_(x)
 
         x = x.transpose(1, 2).contiguous()
         x = x.view(-1, self.out_size)
         x = self.fc(x)
         x = x.view(-1, seq_len, self.params.vocab_size)
-        # print(x.shape)
-        x = self.sigmoid(x)
-        # print(x)
-        # sys.exit()
-        return x
+        return nn.functional.relu(x)

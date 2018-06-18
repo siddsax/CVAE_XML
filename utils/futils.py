@@ -37,9 +37,9 @@ def sample_z(mu, log_var, params, dtype_f):
 def gen_model_file(params):
     data_name = params.data_path.split('/')[-2]
     fs_string = '-'.join([str(fs) for fs in params.filter_sizes])
-    file_name = 'data-%s_sl-%d_ed-%d_fs-%s_nf-%d_pu-%d_pt-%s_hd-%d_bs-%d_model-%s_pretrain-%s' % \
+    file_name = 'data-%s_sl-%d_ed-%d_fs-%s_nf-%d_pu-%d_pt-%s_hd-%d_bs-%d_model-%s_pretrain-%s_beta-%s' % \
         (data_name, params.sequence_length, params.embedding_dim,
          fs_string, params.num_filters, params.pooling_units,
          params.pooling_type, params.hidden_dims, params.batch_size,
-         params.model_variation, params.pretrain_type)
+         params.model_variation, params.pretrain_type, params.beta)
     return file_name

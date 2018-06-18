@@ -10,3 +10,28 @@
 3) The data being created is not having much sense more often than not, Even though the labels do. It is possible 
     however that the important features get lost in a sea of unimportant ones as the features are not sparse or 
     Fast-XML suffers on data that is not sparse. 
+
+
+
+Do classification as per the dilation paper
+
+x -> h
+h -> y_pred
+h -> z_m
+h -> z_v
+z_v, z_m -> z
+z,y_pred -> x
+
+
+x,y -> h
+h -> z_m
+h -> z_v
+z_v, z_m -> z
+z,y -> x
+
+
+x -> h
+h -> z_m
+h -> z_v
+z_v, z_m -> z
+z,y_act -> x
