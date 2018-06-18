@@ -113,14 +113,15 @@ boom = -3
 emb = embedding_layer(params, embedding_weights)
 enc = cnn_encoder(params)
 dec = cnn_decoder(params)
-
+a = 0
+b = 1
 if use_cuda:
     #boom = get_gpu_memory_map(boom) #1
     emb.cuda()
     #boom = get_gpu_memory_map(boom) #2
-    enc.cuda()
+    enc.cuda(a)
     #boom = get_gpu_memory_map(boom) #3
-    dec.cuda()
+    dec.cuda(b)
     #boom = get_gpu_memory_map(boom) #4
 
     print(emb)
@@ -138,6 +139,10 @@ optimizer = optim.Adam(list(enc.parameters()) + list(dec.parameters()), lr=param
 cnt = 0
 
 loss_best = float('Inf')
+loss_best = float('Inf')
+kl_b = float('Inf')
+lk_b = float('Inf')
+loss_best2 = float('Inf')
 if(params.training):
     for i in range(params.num_epochs):
         boom = 1
@@ -170,7 +175,8 @@ if(params.training):
         #boom = get_gpu_memory_map(boom) #10
         decoder_input = emb.forward(decoder_word_input)
         #boom = get_gpu_memory_map(boom) #11
-        logits = dec.forward(decoder_input, z, batch_y)
+        logits = dec.forward(decoder_input.cuda(b), z.cuda(b), batch_y.cuda(b))
+        logits = logits.cuda(a)
         #boom = get_gpu_memory_map(boom) #12
         kld = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
         #boom = get_gpu_memory_map(boom) #13
@@ -182,30 +188,27 @@ if(params.training):
         #boom = get_gpu_memory_map(boom) #15
         loss = params.beta*cross_entropy + kld
         #boom = get_gpu_memory_map(boom) #16
-        kld = kld.data
+        # kld = kld.data
         #boom = get_gpu_memory_map(boom) #17
-        cross_entropy = cross_entropy.data
-        #boom = get_gpu_memory_map(boom) #18
-        loss.backward()
-        #boom = get_gpu_memory_map(boom) #19
-        optimizer.step()
-        #boom = get_gpu_memory_map(boom) #20
-        loss = loss.data
-        #boom = get_gpu_memory_map(boom) #21
-        optimizer.zero_grad()
-        #boom = get_gpu_memory_map(boom) #22
-        # ----------------------------------
+        # cross_entropy = cross_entropy.data
+        # boom = get_gpu_memory_map(18) #18
 
-        print("Loss = {0}, Iteration No. {1}, KL-Loss {2}, BCE-Loss {3}".format(loss, i, kld, cross_entropy))
+        print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({}); recons_loss: {:.4} ({}); best_loss: {:.4};'.format(i, \
+        loss.data, kld.data, kl_b, cross_entropy.data, lk_b, loss_best2))
 
         if(params.disp_flg):
             if(i==0):
-                loss_old = loss
+                loss_old = loss.data
             else:
-                viz.line(X=np.linspace(i - 1,i,50), Y=np.linspace(loss_old, loss,50), name='1', update='append', win=win)
-                loss_old = loss
+                viz.line(X=np.linspace(i - 1,i,50), Y=np.linspace(loss_old, loss.data,50), name='1', update='append', win=win)
+                loss_old = loss.data
             if(i % 100 == 0 ):
                 win = viz.line(X=np.arange(i, i + .1), Y=np.arange(0, .1))
+
+        if(loss<loss_best2):
+            loss_best2 = loss.data
+            lk_b = cross_entropy.data
+            kl_b = kld.data
 
         if params.save:
             
@@ -217,12 +220,22 @@ if(params.training):
                 torch.save(dec.state_dict(), "saved_models/" + params.model_name + "/dec_"+ str(i))
                 cnt += 1
 
-            if(loss<loss_best):
-                loss_best = loss
+            if(loss.data<loss_best):
+                loss_best = loss.data
                 torch.save(emb.state_dict(), "saved_models/" + params.model_name + "/emb_best")
                 torch.save(enc.state_dict(), "saved_models/" + params.model_name + "/enc_best")
                 torch.save(dec.state_dict(), "saved_models/" + params.model_name + "/dec_best")
 
+        # boom = get_gpu_memory_map(18) #18
+        # boom = get_gpu_memory_map(boom) #19
+        loss.backward()
+        # boom = get_gpu_memory_map(boom) #19
+        optimizer.step()
+        # boom = get_gpu_memory_map(boom) #20
+        optimizer.zero_grad()
+        # boom = get_gpu_memory_map(boom) #21
+        # ----------------------------------
+        # boom = get_gpu_memory_map(boom) #22
 else:
     seed = np.random.normal(size=[1, params.Z_dim])
     seed = Variable(torch.from_numpy(seed).float().type(dtype_f))
