@@ -28,26 +28,6 @@ import torch.cuda as cutorch
 
 import subprocess
 
-def get_gpu_memory_map(boom):
-    """Get the current gpu usage.
-
-    Returns
-    -------
-    usage: dict
-        Keys are device ids as integers.
-        Values are memory usage as integers in MB.
-    """
-    result = subprocess.check_output(
-        [
-            'nvidia-smi', '--query-gpu=memory.used',
-            '--format=csv,nounits,noheader'
-        ])
-    # Convert lines into a dictionary
-    gpu_memory = [int(x) for x in result.strip().split('\n')]
-    gpu_memory_map = dict(zip(range(len(gpu_memory)), gpu_memory))
-    print("Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, gpu_memory_map[0], \
-    gpu_memory_map[1], gpu_memory_map[2], gpu_memory_map[3]))
-    return boom+1
 viz = Visdom()
 
 if(torch.cuda.is_available()):
@@ -61,7 +41,7 @@ else:
     dtype_i = torch.LongTensor
     print("=============== Using CPU =========")
 
-
+# -------------- Load data and params -------------------------------------------------
 x_tr = np.load(sys.argv[1] + '/x_train.npy')
 y_tr = sparse.load_npz(sys.argv[1] + '/y_train.npz').todense()
 # x_te = np.load(sys.argv[1] + '/x_test.npy')
@@ -70,129 +50,99 @@ vocabulary = np.load(sys.argv[1] + '/vocab.npy').item()
 vocabulary_inv = np.load(sys.argv[1] + '/vocab_inv.npy')
 params = np.load(sys.argv[1] + '/params.npy').item()
 params.classes = y_tr.shape[1]
-
-
 params.decoder_kernels = [(400, params.Z_dim + params.classes + params.embedding_dim, 3),
                                 (450, 400, 3),
                                 (500, 450, 3)]
 params.decoder_dilations = [1, 2, 4]
 params.decoder_paddings = [effective_k(w, params.decoder_dilations[i]) - 1
                                  for i, (_, _, w) in enumerate(params.decoder_kernels)]
-
-
 if(len(params.model_name)==0):
     params.model_name = gen_model_file(params)
-
-# loss_fn = torch.nn.BCELoss(size_average=False)
-loss_fn = torch.nn.BCELoss(size_average=False)
-# loss_fn = torch.nn.MSELoss(size_average=False)
-
-# scaler = pp.fit(x_tr)
-# x_tr = scaler.transform(x_tr)
-# x_te = scaler.transform(x_te)
-
-X_dim = x_tr.shape[1]
-y_dim = y_tr.shape[1]
-N_tr = x_tr.shape[0]
-cnt = 0
-
-
-if torch.cuda.is_available():
-    dtype = torch.cuda.FloatTensor
-else:
-    dtype = torch.FloatTensor
-
-print 'model_variaton:', params.model_variation
 if params.model_variation=='pretrain':
     embedding_weights = load_word2vec(params.pretrain_type, vocabulary_inv, params.embedding_dim)
 else:
     embedding_weights = None
-
 params.vocab_size = len(vocabulary)
-boom = -3
-emb = embedding_layer(params, embedding_weights)
-enc = cnn_encoder(params)
-dec = cnn_decoder(params)
-a = 0
-b = 1
-if use_cuda:
-    #boom = get_gpu_memory_map(boom) #1
-    emb.cuda()
-    #boom = get_gpu_memory_map(boom) #2
-    enc.cuda(a)
-    #boom = get_gpu_memory_map(boom) #3
-    dec.cuda(b)
-    #boom = get_gpu_memory_map(boom) #4
-
-    print(emb)
-    print(enc)
-    print(dec)
-    print("%"*100)
-print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(emb), count_parameters(enc), count_parameters(dec)))
-
 go_row = np.ones((params.batch_size,1))*vocabulary[params.go_token]
 end_row = np.ones((params.batch_size,1))*vocabulary[params.end_token]
+# -------------------------------------------------------------------------------------
 
+# -------------------------- Loss ---------------------------------------
+# loss_fn = torch.nn.BCELoss(size_average=False)
 loss_fn = torch.nn.BCELoss(size_average=False)
-perplexity = Perplexity()
-optimizer = optim.Adam(list(enc.parameters()) + list(dec.parameters()), lr=params.lr)
-cnt = 0
-
+# loss_fn = torch.nn.MSELoss(size_average=False)
 loss_best = float('Inf')
 loss_best = float('Inf')
 kl_b = float('Inf')
 lk_b = float('Inf')
 loss_best2 = float('Inf')
+X_dim = x_tr.shape[1]
+y_dim = y_tr.shape[1]
+N_tr = x_tr.shape[0]
+cnt = 0
+#  --------------------------------------------------------------------
+
+# ------------------------ GPU -------------------------------------------------
+if torch.cuda.is_available():
+    dtype = torch.cuda.FloatTensor
+else:
+    dtype = torch.FloatTensor
+# -------------------------------------------------------------------------------
+
+
+# --------------------- GPU Config ----------------------------
+a = 0
+b = 1
+emb = embedding_layer(params, embedding_weights)
+enc = cnn_encoder(params)
+dec = cnn_decoder(params)
+if use_cuda:
+    emb.cuda()
+    enc.cuda(a)
+    dec.cuda(b)
+    print(emb);print(enc);print(dec);print("%"*100)
+print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(emb), count_parameters(enc), count_parameters(dec)))
+# ---------------------------------------------------------
+
+# --------------- adam --------------------------------
+optimizer = optim.Adam(list(enc.parameters()) + list(dec.parameters()), lr=params.lr)
+# ------------------------------------------------------
+
 if(params.training):
     for i in range(params.num_epochs):
-        boom = 1
-        #boom = get_gpu_memory_map(boom) #1
-        #boom = get_gpu_memory_map(boom) #2
-
+        # ------------------ Load Batch Data ---------------------------------------------------------
         indexes = np.array(np.random.randint(N_tr, size=params.batch_size))
         batch_x = x_tr[indexes,:]
         batch_y = y_tr[indexes,:]
         decoder_word_input = np.concatenate((go_row,batch_x), axis=1)
         decoder_target = np.concatenate((batch_x, end_row), axis=1)
 
-        #boom = get_gpu_memory_map(boom) #3
         batch_x = Variable(torch.from_numpy(batch_x.astype('int')).type(dtype_i))
         batch_y = Variable(torch.from_numpy(batch_y.astype('float')).type(dtype_f))
         decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')).type(dtype_i))
         decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(dtype_i))
-        #boom = get_gpu_memory_map(boom) #4
+        decoder_target = decoder_target.view(-1)
+        # -------------------------------------------------------------------------------------------
 
-        #boom = get_gpu_memory_map(boom) #5
+        # -------------- Encode ---------------------------------------------------
         e_emb = emb.forward(batch_x)
-        #boom = get_gpu_memory_map(boom) #6
         z_mu, z_lvar = enc.forward(e_emb, batch_y)
-        #boom = get_gpu_memory_map(boom) #7
         z = Variable(torch.randn([params.batch_size, params.Z_dim])).type(dtype_f)
-        #boom = get_gpu_memory_map(boom) #8
         eps = torch.exp(0.5 * z_lvar)
-        #boom = get_gpu_memory_map(boom) #9
         z = z * eps + z_mu
-        #boom = get_gpu_memory_map(boom) #10
+        kld = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
+        # -------------------------------------------------------------------------
+
+        # --------------- Decoder --------------------------------------------------------------------
         decoder_input = emb.forward(decoder_word_input)
-        #boom = get_gpu_memory_map(boom) #11
         logits = dec.forward(decoder_input.cuda(b), z.cuda(b), batch_y.cuda(b))
         logits = logits.cuda(a)
-        #boom = get_gpu_memory_map(boom) #12
-        kld = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
-        #boom = get_gpu_memory_map(boom) #13
         logits = logits.view(-1, params.vocab_size)
-        #boom = get_gpu_memory_map(boom) #14
-        
-        decoder_target = decoder_target.view(-1)
         cross_entropy = torch.nn.functional.cross_entropy(logits, decoder_target)
-        #boom = get_gpu_memory_map(boom) #15
+        # --------------------------------------------------------------------------------------------        
+        
+        # --------------- Loss and Saving / Diagram Routines ------------------------------------------ 
         loss = params.beta*cross_entropy + kld
-        #boom = get_gpu_memory_map(boom) #16
-        # kld = kld.data
-        #boom = get_gpu_memory_map(boom) #17
-        # cross_entropy = cross_entropy.data
-        # boom = get_gpu_memory_map(18) #18
-
         print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({}); recons_loss: {:.4} ({}); best_loss: {:.4};'.format(i, \
         loss.data, kld.data, kl_b, cross_entropy.data, lk_b, loss_best2))
 
@@ -225,30 +175,26 @@ if(params.training):
                 torch.save(emb.state_dict(), "saved_models/" + params.model_name + "/emb_best")
                 torch.save(enc.state_dict(), "saved_models/" + params.model_name + "/enc_best")
                 torch.save(dec.state_dict(), "saved_models/" + params.model_name + "/dec_best")
-
-        # boom = get_gpu_memory_map(18) #18
-        # boom = get_gpu_memory_map(boom) #19
+        # -------------------------------------------------------------------------------------------------
+        # -------------------------------- Loss Propogation and Optimization ------------------------------
         loss.backward()
-        # boom = get_gpu_memory_map(boom) #19
         optimizer.step()
-        # boom = get_gpu_memory_map(boom) #20
         optimizer.zero_grad()
-        # boom = get_gpu_memory_map(boom) #21
-        # ----------------------------------
-        # boom = get_gpu_memory_map(boom) #22
-else:
-    seed = np.random.normal(size=[1, params.Z_dim])
-    seed = Variable(torch.from_numpy(seed).float().type(dtype_f))
-    if use_cuda:
-        seed = seed.cuda()
+        # -------------------------------------------------------------------------------------------------
 
-    decoder_word_input_np, _ = batch_loader.go_input(1)
-    decoder_word_input = Variable(torch.from_numpy(decoder_word_input_np).long().type(dtype_i))
+# else:
+#     seed = np.random.normal(size=[1, params.Z_dim])
+#     seed = Variable(torch.from_numpy(seed).float().type(dtype_f))
+#     if use_cuda:
+#         seed = seed.cuda()
 
-    if use_cuda:
-        decoder_word_input = decoder_word_input.cuda()
+#     decoder_word_input_np, _ = batch_loader.go_input(1)
+#     decoder_word_input = Variable(torch.from_numpy(decoder_word_input_np).long().type(dtype_i))
 
-    result = ''
+#     if use_cuda:
+#         decoder_word_input = decoder_word_input.cuda()
+
+#     result = ''
 
     # for i in range(seq_len):
     #     logits, _ = self(0., None, None,

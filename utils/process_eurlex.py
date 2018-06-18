@@ -2,9 +2,9 @@ import subprocess
 import numpy as np 
 from numpy import genfromtxt
 
-bashCommand = "java -cp ~/Downloads/weka-3-8-2/weka.jar weka.core.converters.CSVSaver -i eurlex_nA-5k_CV1-10_train.arff > eurlex_nA-5k_CV1-10_train.csv"
-process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-output, error = process.communicate()
+#bashCommand = "java -cp ~/Downloads/weka-3-8-2/weka.jar weka.core.converters.CSVSaver -i eurlex_nA-5k_CV1-10_train.arff > eurlex_nA-5k_CV1-10_train.csv"
+#process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+#output, error = process.communicate()
 
 with open('eurlex_nA-5k_CV1-10_train.csv') as f:
     lines = f.read().splitlines()[0]

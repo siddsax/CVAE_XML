@@ -48,7 +48,7 @@ class Flatten(nn.Module):
         x = x.view(x.size()[0], -1)
         return x
 
-def weights_init(m):
+def torch.nn.init.xavier_uniform_(m):
     # if isinstance(m, nn.Conv1d):
     #     torch.nn.init.xavier_uniform(m.weight.data)
     #     torch.nn.init.xavier_uniform(m.bias.data)
@@ -99,7 +99,7 @@ class cnn_encoder(torch.nn.Module):
 
             # l_conv = nn.Conv1d(self.embedding_dim + args.classes, self.num_filters, fsz, stride=2)
             l_conv = nn.Conv1d(self.embedding_dim, self.num_filters, fsz, stride=2)
-            weights_init(l_conv)
+            torch.nn.init.xavier_uniform_(l_conv)
             
             
             # l_conv = nn.DataParallel(l_conv)
@@ -132,9 +132,9 @@ class cnn_encoder(torch.nn.Module):
         self.mu = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
         self.var = nn.Linear(fin_l_out_size, self.Z_dim, bias=True)
         #boom = get_gpu_memory_map(boom) #-1
-        # weights_init(self.fc)
-        weights_init(self.var)
-        weights_init(self.mu)
+        # torch.nn.init.xavier_uniform_(self.fc)
+        torch.nn.init.xavier_uniform_(self.var)
+        torch.nn.init.xavier_uniform_(self.mu)
         # self.fc = nn.DataParallel(self.fc)
         
         

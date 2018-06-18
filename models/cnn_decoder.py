@@ -8,7 +8,7 @@ import torch.nn as nn
 import scipy.sparse as sp
 import torch.optim as optim
 sys.path.insert(0, '../utils')
-
+from futils import *
 from w2v import load_word2vec
 import matplotlib.pyplot as plt
 import torch.autograd as autograd
@@ -16,35 +16,6 @@ from torch.autograd import Variable
 import matplotlib.gridspec as gridspec
 from torch.nn import Parameter
 import subprocess
-
-def get_gpu_memory_map(boom):
-    """Get the current gpu usage.
-
-    Returns
-    -------
-    usage: dict
-        Keys are device ids as integers.
-        Values are memory usage as integers in MB.
-    """
-    result = subprocess.check_output(
-        [
-            'nvidia-smi', '--query-gpu=memory.used',
-            '--format=csv,nounits,noheader'
-        ])
-    # Convert lines into a dictionary
-    gpu_memory = [int(x) for x in result.strip().split('\n')]
-    gpu_memory_map = dict(zip(range(len(gpu_memory)), gpu_memory))
-    print("In Decoder:: Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, gpu_memory_map[0], \
-    gpu_memory_map[1], gpu_memory_map[2], gpu_memory_map[3]))
-    return boom+1
-
-
-def weights_init(m):
-    # if isinstance(m, nn.Conv1d):
-    #     torch.nn.init.xavier_uniform(m.weight.data)
-    #     torch.nn.init.xavier_uniform(m.bias.data)
-    # else:
-    torch.nn.init.xavier_uniform_(m.weight.data)
 
 class cnn_decoder(nn.Module):
     def __init__(self, params):
@@ -68,7 +39,7 @@ class cnn_decoder(nn.Module):
             layer = nn.Conv1d(in_chan, out_chan, width,
                          dilation=self.params.decoder_dilations[layer],
                          padding=self.params.decoder_paddings[layer])
-            weights_init(layer)
+            torch.nn.init.xavier_uniform_(layer)
             
             
             # layer = nn.DataParallel(layer)
@@ -84,7 +55,7 @@ class cnn_decoder(nn.Module):
         self.fc = nn.Linear(self.out_size, self.params.vocab_size)
         self.bn_2 = nn.BatchNorm1d(self.params.sequence_length + 1)
         #boom = get_gpu_memory_map(boom)#-2
-        weights_init(self.fc)
+        torch.nn.init.xavier_uniform_(self.fc)
         
         
         # self.fc = nn.DataParallel(self.fc)

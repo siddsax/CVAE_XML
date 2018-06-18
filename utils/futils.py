@@ -14,6 +14,23 @@ from torch.autograd import Variable
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
 
+def weights_init(m):
+    torch.nn.init.xavier_uniform_(m.weight.data)
+
+def get_gpu_memory_map(boom, name=False):
+    result = subprocess.check_output(
+        [
+            'nvidia-smi', '--query-gpu=memory.used',
+            '--format=csv,nounits,noheader'
+        ])
+    gpu_memory = [int(x) for x in result.strip().split('\n')]
+    gpu_memory_map = dict(zip(range(len(gpu_memory)), gpu_memory))
+    if(name):
+        print("In " + str(name) + " Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, gpu_memory_map[0], \
+    else:
+        print("Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, gpu_memory_map[0], \
+    gpu_memory_map[1], gpu_memory_map[2], gpu_memory_map[3]))
+    return boom+1
 
 
 def count_parameters(model):
