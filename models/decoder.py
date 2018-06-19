@@ -14,20 +14,19 @@ class decoder(torch.nn.Module):
     def __init__(self, X_dim, y_dim, h_dim, Z_dim):
         
         super(decoder, self).__init__()
-        # nn.init.xavier_uniform_.torch.nn.init.xavier_uniform
-        self.l0 = nn.Linear(Z_dim + y_dim, h_dim + y_dim, bias=True)
+        self.l0 = nn.Linear(Z_dim + X_dim, h_dim + X_dim, bias=True)
         self.l1 = nn.DataParallel(nn.ReLU())
-        self.bn = nn.BatchNorm1d(h_dim + y_dim)
+        self.bn = nn.BatchNorm1d(h_dim + X_dim)
 
-        self.l2 = nn.Linear(h_dim + y_dim, 2*h_dim + y_dim, bias=True)
+        self.l2 = nn.Linear(h_dim + X_dim, 2*h_dim + X_dim, bias=True)
         self.l3 = nn.DataParallel(nn.ReLU())
-        self.bn2 = nn.BatchNorm1d(2*h_dim + y_dim)
+        self.bn2 = nn.BatchNorm1d(2*h_dim + X_dim)
         
-        self.l4 = nn.Linear(2*h_dim + y_dim, 3*h_dim + y_dim, bias=True)
+        self.l4 = nn.Linear(2*h_dim + X_dim, 3*h_dim + X_dim, bias=True)
         self.l5 = nn.DataParallel(nn.ReLU())
-        self.bn3 = nn.BatchNorm1d(3*h_dim + y_dim)
+        self.bn3 = nn.BatchNorm1d(3*h_dim + X_dim)
 
-        self.l6 = nn.Linear(3*h_dim + y_dim, X_dim, bias=True)
+        self.l6 = nn.Linear(3*h_dim + X_dim, Y_dim, bias=True)
         # self.l7 = nn.ReLU()
         self.l7 = nn.Sigmoid()
 
