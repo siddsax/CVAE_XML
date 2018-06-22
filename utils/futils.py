@@ -74,3 +74,11 @@ def bce_loss(y_pred, y):
         print(torch.mean(y_pred*y + y_pred_1*(1-y),dim=0))
         print(t)
     return t
+
+def load_data(params):
+    X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
+    X_trn = X_trn.astype(np.int32)
+    X_tst = X_tst.astype(np.int32)
+    Y_trn = Y_trn.astype(np.int32)
+    Y_tst = Y_tst.astype(np.int32)
+    return X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params

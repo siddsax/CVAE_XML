@@ -27,8 +27,8 @@ class decoder(torch.nn.Module):
         self.bn3 = nn.BatchNorm1d(3*h_dim + y_dim)
 
         self.l6 = nn.Linear(3*h_dim + y_dim, X_dim, bias=True)
-        self.l7 = nn.ReLU()
-        # self.l7 = nn.Sigmoid()
+        # self.l7 = nn.ReLU()
+        self.l7 = nn.Sigmoid()
 
         torch.nn.init.xavier_uniform_(self.l0.weight)
         torch.nn.init.xavier_uniform_(self.l2.weight)
@@ -57,6 +57,6 @@ class decoder(torch.nn.Module):
         obn3 = self.bn3(o5)
 
         o6 = self.l6(obn3)
-        # o7 = self.l7(o6)
+        o7 = self.l7(o6)
         
-        return o6
+        return o7

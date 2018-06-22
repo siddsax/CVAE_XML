@@ -20,9 +20,9 @@ from decoder import decoder
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
-parser.add_argument('--zd', dest='Z_dim', type=int, default=500, help='Latent layer dimension')
+parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=10, help='Size of minibatch, changing might result in latent layer variance overflow')
-parser.add_argument('--hd', dest='h_dim', type=int, default=750, help='hidden layer dimension')
+parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 0 is for gaussian pp')
@@ -40,27 +40,23 @@ if torch.cuda.is_available():
 else:
     dtype = torch.FloatTensor
 
-# x_tr = np.load('datasets/Eurlex/ft_trn.npy')
-x_te = np.load('datasets/Eurlex/ft_tst.npy')
-# y_tr = np.load('datasets/Eurlex/label_trn.npy')
-y_te = np.load('datasets/Eurlex/label_tst.npy')
 
 x_tr = np.load('datasets/Eurlex/eurlex_docs/x_tr.npy')
 y_tr = np.load('datasets/Eurlex/eurlex_docs/y_tr.npy')
 
-# -----------------------------
+# # -----------------------------
 
-# -----------------------------
+# # -----------------------------
 
-if(args.pca_flag):
-    pca = PCA(n_components=2)
-    pca.fit(x_tr)
-    x_tr = pca.transform(x_tr)
-    x_te = pca.transform(x_te)
-    pca = PCA(n_components=2)
-    pca.fit(y_tr)
-    y_tr = pca.transform(y_tr)
-    y_te = pca.transform(y_te)
+# if(args.pca_flag):
+#     pca = PCA(n_components=2)
+#     pca.fit(x_tr)
+#     x_tr = pca.transform(x_tr)
+#     x_te = pca.transform(x_te)
+#     pca = PCA(n_components=2)
+#     pca.fit(y_tr)
+#     y_tr = pca.transform(y_tr)
+#     y_te = pca.transform(y_te)
 
 if(args.pp_flg):
     pp = preprocessing.MinMaxScaler()
@@ -68,7 +64,7 @@ else:
     pp = preprocessing.StandardScaler()
 
 scaler = pp.fit(x_tr)
-x_tr = scaler.transform(x_tr)
+# x_tr = scaler.transform(x_tr)
 
 
 
@@ -84,15 +80,15 @@ x_tr = scaler.transform(x_tr)
 # label_counts = np.sum(y_tr, axis=0)
 # x = np.sum(y_tr, axis=1)
 # new_y = np.zeros(np.shape(y_tr))#[0], np.shape(y_tr)[1])
-# clusters = np.load('cluster_assignments_1.npy')[0,:]
-# num_clusters = np.max(clusters)
+# ## clusters = np.load('cluster_assignments_1.npy')[0,:]
+# # num_clusters = int(np.max(clusters))
 
 # lives = label_counts - 40
 # lives[np.argwhere(lives>0)] = 0
 # clusters[np.argwhere(lives==0)] = num_clusters + 1 
 # data_pts_num = []
 # data_pts = []
-# for i in range(num_clusters):
+# for i in range(int(num_clusters)):
 #     data_pts.append(np.argwhere(clusters==i))           
 #     data_pts_num.append(len(data_pts[i]))
 
@@ -134,14 +130,15 @@ x_tr = scaler.transform(x_tr)
 new_y = np.load('new_y.npy')
 c = Variable(torch.from_numpy(new_y.astype('float32'))).type(dtype)
 X_dim = x_tr.shape[1]
-y_dim = y_tr.shape[1]
+# y_dim = y_tr.shape[1]
 print(X_dim)
-print(y_dim)
+# print(y_dim)
 print(new_y.shape)
-P = decoder(X_dim, y_dim, args.h_dim, args.Z_dim)
-P.load_state_dict(torch.load('saved_models/' + args.model_name + '/P_best'))
+P = torch.load('saved_models/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1/P_best')
+# P = decoder(X_dim, y_dim, args.h_dim, args.Z_dim)
+# P.load_state_dict(torch.load('saved_models/' + args.model_name + '/P_best'))
 if(torch.cuda.is_available()):
-    P.cuda()
+    # P.cuda()
     # Q.cuda()
     print("--------------- Using GPU! ---------")
 else:
@@ -155,8 +152,8 @@ X_sample = P.forward(inp)
 
 new_x = scaler.inverse_transform(X_sample.data)
 
-if not os.path.exists('datasets/' + args.model_name ):
-    os.makedirs('datasets/' + args.model_name)
-np.save('datasets/' + args.model_name + '/new_x', np.around(new_x, decimals=4))
-np.save('datasets/' + args.model_name + '/new_y', new_y)
+if not os.path.exists('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1' ):
+    os.makedirs('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1')
+np.save('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1/new_x', np.around(new_x, decimals=4))
+np.save('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1/new_y', new_y)
 

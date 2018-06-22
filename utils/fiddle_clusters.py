@@ -15,7 +15,7 @@ from sklearn.metrics import silhouette_score
 from dpmeans import *
 from sklearn.decomposition import PCA
 from sklearn.decomposition import TruncatedSVD
-
+import scipy.io as sio
 x_tr = np.load('datasets/Eurlex/eurlex_docs/x_tr.npy')
 y_tr = np.load('datasets/Eurlex/eurlex_docs/y_tr.npy')
 x_te = np.load('datasets/Eurlex/eurlex_docs/x_te.npy')
@@ -43,6 +43,8 @@ for i in range(m):
     
     print(i)
 np.save('adjacency_mat', adjacency_mat)
+adjacency_mat = sparse.csr_matrix(adjacency_mat)
+sio.savemat('adjacency_mat', adjacency_mat)
 print((check_mat==0).any())
 print(adjacency_mat[:100,:100])
 # -----------------------------------------

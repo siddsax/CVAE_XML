@@ -60,4 +60,13 @@ Why should the network care about Z at all. Similar problem also happens in cond
 
 
 X -> 600 -> 200 ~ z -> 600 -> Y -> sigmoid  (Variational Autoencoders for Collaborative Filtering)
+
 X,Y' -> 600 -> 200 ~ z,X -> 600 -> Y -> sigmoid (Multiple Models) (Learning Structured Output Representation using Deep Conditional Generative Models)
+
+(X,Y) -> L1 -> L2 -> L3 ~ Z, while decoder being (Z,Y) -> L1 -> L2 -> L3 -> X
+
+X -> Encoder -> H ~ Z -> MLP -> Y_pred
+                    (Z,Y_pred) -> Decoder -> X
+H ~ Z 
+H -> MLP -> Y_pred
+(Z,Y_pred) -> Decoder -> X
