@@ -1,0 +1,63 @@
+A) Feed Forward VAEs
+
+a) Similar to "Variational Autoencoders for Collaborative Filtering"
+
+Have a 2 layered VAE with as X -> 600 -> 200 ~ z -> 600 -> Y -> sigmoid. They have done sampling in their github implementation as well. 
+This tried on Wiki-10 dataset with ~100K feature dimension vector and ~30K label vector.
+
+Stable learning curve 
+Suffers due to sparse data. Model predict very small values for labels with most output being zero on a binary cross-entropy loss 
+which minimizes the loss too. Increasing weight of the BCE loss doesnt help too.
+
+X -> 600 -> 200 ~ z -> 600 -> Y -> sigmoid
+
+
+
+b) VAE for data generation
+
+Model takes TF-IDF features as inputs and then tries to regenerate the data. The conditional encoder being 
+(X,Y) -> L1 -> L2 -> L3 ~ Z, while decoder being (Z,Y) -> L1 -> L2 -> L3 -> X. In this way a model can be learnt for generating data points for tail labels akin to zero shot or few 
+shot learning methods. Sampling for Y done via features from adjacency matrix of features (x_ij = # label 
+i and j co-occur in the data) and then doing heirarchical Kmeans, as done in SLEEC (Bhatia et al.) which leads 
+to reasonable feature for generating new data. 
+
+Trains erratically with batch normalization between layers and xavier intialization, KL-explodes without them. Tried multiple 
+configs
+Decoder -> sigmoid (Input data is mapped to 0-1 from TF-IDF feats, and Binary Cross Entropy (BCE) Loss)
+Decoder -> ReLU (Use raw TF_IDF features with ReLU and L1 Loss for sparsity)
+
+The generated data is not sparse whereas the real X in itself is sparse with only few words occuring in a document while also 
+not coherent with the labels. Training can be a possible issue here as the error erratically increases and decreases.
+
+B) Feature Based methods
+
+Combining (Deep Learning for Extreme Multi-label Text Classification) and (Improved Variational Autoencoders for Text Modeling using Dilated Convolutions
+) as a text based Variational Auto Encoder. The first model specializes in extracting features for XML while the decoder being 
+the state of art CNN based decoder for text (LSTMs can be even more problematic due to higher complexity ) and also has 
+been used in semi-supervised learning for Classification. the model being 
+
+X -> Encoder -> H
+H ~ Z 
+H -> MLP -> Y_pred
+(Z,Y_pred) -> Decoder -> X
+
+This can be used for Classification as well as generating data. The Decoder can be fed with actual Y instead of Y_pred in 
+that case hence at test time, sampling a Z from N(0,1) and labels as done in the previous case. This is trained on the cross 
+entropy loss on the vocabluary (i.e. BCE with respect to one-hot vector hot at the position of the occuring word) as used in the 
+dilated CNN paper. As this involves a fully connected layer of the size of the vocabluary, we'll probably 
+need to use a gaussian likelihood with the embeddings (pre-trained) W2V or Glove. 
+
+Problem
+
+The issue is that the model doesnt train properly, the KL-Divergence explodes after a few iterations even after using batch normalization
+which had helped resolving this issue in the previous model.
+
+Questions
+
+Why should the network care about Z at all. Similar problem also happens in conditional GANs. 
+
+
+
+
+X -> 600 -> 200 ~ z -> 600 -> Y -> sigmoid  (Variational Autoencoders for Collaborative Filtering)
+X,Y' -> 600 -> 200 ~ z,X -> 600 -> Y -> sigmoid (Multiple Models) (Learning Structured Output Representation using Deep Conditional Generative Models)

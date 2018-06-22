@@ -27,9 +27,10 @@ def get_gpu_memory_map(boom, name=False):
     gpu_memory_map = dict(zip(range(len(gpu_memory)), gpu_memory))
     if(name):
         print("In " + str(name) + " Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, gpu_memory_map[0], \
+        gpu_memory_map[1], gpu_memory_map[2], gpu_memory_map[3]))
     else:
         print("Print: {0}; Mem(1): {1}; Mem(2): {2}; Mem(3): {3}; Mem(4): {4}".format( boom, gpu_memory_map[0], \
-    gpu_memory_map[1], gpu_memory_map[2], gpu_memory_map[3]))
+        gpu_memory_map[1], gpu_memory_map[2], gpu_memory_map[3]))
     return boom+1
 
 
@@ -49,8 +50,8 @@ def effective_k(k, d):
 
 def sample_z(mu, log_var, params, dtype_f):
     eps = Variable(torch.randn(params.batch_size, params.Z_dim).type(dtype_f))
-    return mu + torch.exp(log_var / 2) * eps
-
+    k = torch.exp(log_var / 2) * eps
+    return mu + k
 def gen_model_file(params):
     data_name = params.data_path.split('/')[-2]
     fs_string = '-'.join([str(fs) for fs in params.filter_sizes])
@@ -60,3 +61,16 @@ def gen_model_file(params):
          params.pooling_type, params.hidden_dims, params.batch_size,
          params.model_variation, params.pretrain_type, params.beta)
     return file_name
+
+def bce_loss(y_pred, y):
+    y_pred_1 = torch.log(y_pred)
+    y_pred_2 = torch.log(1 - y_pred)
+    t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
+    if(t<0):
+        print(y_pred)
+        print(y_pred_1)
+        print(y_pred*y)
+        print(y_pred_1*(1-y))
+        print(torch.mean(y_pred*y + y_pred_1*(1-y),dim=0))
+        print(t)
+    return t

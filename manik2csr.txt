@@ -1,0 +1,14 @@
+%%% Matlab %%%%%%%%%%%
+cd fastxml/manik/tools/
+[xt, yt] = read_data('wiki10_test.txt'); % not on wk_x etc
+[row col v] = find(xt);
+dlmwrite('wk_xt.txt',[col row v], 'delimiter', ',');
+
+####### Python##########
+from numpy import genfromtxt
+from scipy import sparse
+import numpy as np
+a = genfromtxt('wk_y.txt', delimiter=',')
+k = a[:,0:2].astype(int)-1
+b = sparse.csr_matrix((a[:,2], (k[:,0], k[:,1])))
+sparse.save_npz('wk_y', b)
