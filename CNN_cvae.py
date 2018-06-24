@@ -25,12 +25,15 @@ import argparse
 from visdom import Visdom
 from sklearn.externals import joblib 
 from futils import *
+from loss import loss
+from CNN_encoder_decoder import cnn_encoder_decoder
+
 viz = Visdom()
 # ------------------------ Params -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
 parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
-parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
+parser.add_argument('--mb', dest='mb_size', type=int, default=20, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
@@ -44,7 +47,8 @@ parser.add_argument('--tr', dest='training', type=int, default=1, help='model na
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--ds', dest='data_set', type=str, default="rcv", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="ReLU", help='model name')
-parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--pp', dest='pp_flg', type=int, default=0, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--loss', dest='loss_type', type=str, default="BCELoss", help='Loss')
 
 parser.add_argument('--sequence_length',help='max sequence length of a document', type=int,default=500)
 parser.add_argument('--embedding_dim', help='dimension of word embedding representation', type=int, default=300)
@@ -53,49 +57,47 @@ parser.add_argument('--pretrain_type', help='pretrain model: GoogleNews or glove
 parser.add_argument('--vocab_size', help='size of vocabulary keeping the most frequent words', type=int, default=30000)
 parser.add_argument('--drop_prob', help='Dropout probability', type=int, default=.3)
 parser.add_argument('--load_data', help='Load Data or not', type=int, default=1)
+parser.add_argument('--mg', dest='multi_gpu', type=int, default=0, help='1 for 2 gpus and 0 for normal')
+parser.add_argument('--filter_sizes', help='number of filter sizes (could be a list of integer)', type=int, default=[2, 4, 8], nargs='+')
+parser.add_argument('--num_filters', help='number of filters (i.e. kernels) in CNN model', type=int, default=32)
+parser.add_argument('--pooling_units', help='number of pooling units in 1D pooling layer', type=int, default=32)
+parser.add_argument('--pooling_type', help='max or average', type=str, default='max')
 
 params = parser.parse_args()
 params.pad_token = "<PAD/>"
 params.go_token = '<GO/>'
 params.end_token = '<END/>'
-data_path = 'datasets/rcv/' + params.data_set
 
 if(len(params.model_name)==0):
-    params.model_name = "Gen_data_CNN_Z_dim-{}_mb_size-{}_h_dim-{}_preproc-{}_beta-{}_final_ly-{}_loss-{}".format(params.Z_dim, params.mb_size, \
-    params.h_dim, params.pp_flg, params.beta, params.fin_layer, params.loss_type)#, params.data_set)
+    params.model_name = "Gen_data_CNN_Z_dim-{}_mb_size-{}_h_dim-{}_preproc-{}_beta-{}_final_ly-{}_loss-{}_sequence_length-{}\_embedding_dim-{}_params.vocab_size={};"\
+    .format(params.Z_dim, params.mb_size, params.h_dim, params.pp_flg, params.beta, params.fin_layer, params.loss_type, \
+    params.sequence_length, params.embedding_dim, params.vocab_size)
+
 print('Saving Model to: ' + params.model_name)
 # ------------------ data ----------------------------------------------
 print('Boom 0')
 
+params.data_path = 'datasets/rcv/rcv'# + params.data_set
 if(params.load_data):
     print("Loading Data")
-    print(data_path)
+    print(params.data_path)
+    params.data_path = 'datasets/rcv/rcv.p'# + params.data_set
     x_tr, y_tr, x_te, y_te, vocabulary, vocabulary_inv, params = load_data(params)
+    params.data_path = 'datasets/rcv/' + params.data_set
 
-    np.save(data_path + '/x_train', x_tr)
-    sparse.save_npz(data_path + '/y_train', y_tr)
-    sparse.save_npz(data_path + '/y_test', y_te)
-    np.save(data_path + '/x_test', x_te)
-    np.save(data_path + '/vocab', vocabulary)
-    np.save(data_path + '/vocab_inv', vocabulary_inv)
-x_tr = np.load(data_path + '/x_train.npy')
-y_tr = sparse.load_npz(data_path + '/y_train.npz').todense()
-# x_te = np.load(data_path + '/x_test.npy')
-# y_te = sparse.load_npz(data_path + '/y_test.npz').todense()
-vocabulary = np.load(data_path + '/vocab.npy').item()
-vocabulary_inv = np.load(data_path + '/vocab_inv.npy')
+    np.save(params.data_path + '/x_train', x_tr)
+    sparse.save_npz(params.data_path + '/y_train', y_tr)
+    sparse.save_npz(params.data_path + '/y_test', y_te)
+    np.save(params.data_path + '/x_test', x_te)
+    np.save(params.data_path + '/vocab', vocabulary)
+    np.save(params.data_path + '/vocab_inv', vocabulary_inv)
+x_tr = np.load(params.data_path + '/x_train.npy')
+y_tr = sparse.load_npz(params.data_path + '/y_train.npz').todense()
+# x_te = np.load(params.data_path + '/x_test.npy')
+# y_te = sparse.load_npz(params.data_path + '/y_test.npz').todense()
+vocabulary = np.load(params.data_path + '/vocab.npy').item()
+vocabulary_inv = np.load(params.data_path + '/vocab_inv.npy')
 # -------------------------------------------------------------------------------------
-
-if(torch.cuda.is_available()):
-    use_cuda = 1
-    dtype_f = torch.cuda.FloatTensor
-    dtype_i = torch.cuda.LongTensor
-    print("--------------- Using GPU! ---------")
-else:
-    use_cuda = 0
-    dtype_f = torch.FloatTensor
-    dtype_i = torch.LongTensor
-    print("=============== Using CPU =========")
 
 # -----------------------  Loss ------------------------------------
 loss_fn = getattr(loss(), params.loss_type)
@@ -131,7 +133,7 @@ lk_b = float('Inf')
 loss_best2 = float('Inf')
 best_epch_loss = float('Inf')
 best_test_loss = float('Inf')
-num_mb = np.ceil(N/args.mb_size)
+num_mb = np.ceil(N/params.mb_size)
 # ---------------------------------------------------------------------------------
 
 
@@ -139,27 +141,49 @@ num_mb = np.ceil(N/args.mb_size)
 if(params.training):
     if(len(params.load_model)):
         print('loading saved_models/Z_dim-50_mb_size-100_h_dim-100_pp_flg-1_beta-1000_dataset-Eurlex/')
-        emb = torch.load("saved_models/Z_dim-50_mb_size-100_h_dim-100_pp_flg-1_beta-1000_dataset-Eurlex/emb_best")
-        enc = torch.load("saved_models/Z_dim-50_mb_size-100_h_dim-100_pp_flg-1_beta-1000_dataset-Eurlex/enc_best")
-        dec = torch.load("saved_models/Z_dim-50_mb_size-100_h_dim-100_pp_flg-1_beta-1000_dataset-Eurlex/dec_best")
+        model = torch.load("saved_models/Z_dim-50_mb_size-100_h_dim-100_pp_flg-1_beta-1000_dataset-Eurlex/model_best")
         print(emb);print(enc);print(dec);print("%"*100)
     else:
-        emb = embedding_layer(params, embedding_weights)
-        enc = cnn_encoder(params)
-        dec = cnn_decoder(params
+        model = cnn_encoder_decoder(params, embedding_weights)
         a = 0
         b = 1
         if(torch.cuda.is_available()):
-            emb.cuda()
-            enc.cuda(a)
-            dec.cuda(b)
             print("--------------- Using GPU! ---------")
-        else:
-            print("=============== Using CPU =========")
-    print(emb);print(enc);print(dec);print("%"*100)
-    print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(emb), count_parameters(enc), count_parameters(dec)))
+            dtype_f = torch.cuda.FloatTensor
+            dtype_i = torch.cuda.LongTensor
+            model.params.dtype_f = dtype_f
+            model.params.dtype_i = dtype_i
+            
+            if(params.multi_gpu):
+                model.embedding_layer.cuda()
+                model.encoder.cuda(a)
+                model.decoder.conv_layers.cuda(b)
+                model.decoder.drp.cuda(b)
+                model.decoder.bn_inp.cuda(b)
+                model.decoder.bn_1.cuda(b)
+                model.decoder.relu.cuda(b)
+                model.decoder.sigmoid.cuda(2)
+                model.decoder.fc.cuda(2)
+                print("==== Paralyzing =====")
+                print(model);print("%"*100)
+                print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
 
-    optimizer = optim.Adam(list(enc.parameters()) + list(dec.parameters()), lr=params.lr)
+            else:
+                print(model);print("%"*100)
+                print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
+                model = nn.DataParallel(model.cuda())
+
+        else:
+            dtype_f = torch.FloatTensor
+            dtype_i = torch.LongTensor
+            model.params.dtype_f = dtype_f
+            model.params.dtype_i = dtype_i
+            print("=============== Using CPU =========")
+
+            print(model);print("%"*100)
+            print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
+
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
     print('Boom 5')
     # =============================== TRAINING ====================================
@@ -179,40 +203,17 @@ if(params.training):
             decoder_target = decoder_target.view(-1)
             # -----------------------------------------------------------------------------------
 
-            # ----------- Encode (X, Y) --------------------------------------------
-            e_emb = emb.forward(batch_x)
-            z_mu, z_lvar = enc.forward(e_emb, batch_y)
-            z = Variable(torch.randn([params.mb_size, params.Z_dim])).type(dtype_f)
-            eps = torch.exp(0.5 * z_lvar)
-            z = z * eps + z_mu
-            kl_loss = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
-            # -------------------------------------------------------------------------
-
-            # ---------------------------- Decoder ------------------------------------
-            decoder_input = emb.forward(decoder_word_input)
-            logits = dec.forward(decoder_input.cuda(b), z.cuda(b), batch_y.cuda(b))
-            logits = logits.cuda(a)
-            logits = logits.view(-1, params.vocab_size)
-            # recon_loss = loss_fn(X_sample, X)
-            # Here the loss is between one-hot vectors and the final fc layer
-            cross_entropy = torch.nn.functional.cross_entropy(logits, decoder_target)
-            # ------------------ Check for Recon Loss ----------------------------
-            if(cross_entropy<0):
-                print(cross_entropy)
-                print(X_sample[0:100])
-                print(X[0:100])
-                sys.exit()
-            # ---------------------------------------------------------------------
-          
-            # ------------ Loss --------------------------------------------------
-            loss = params.beta*cross_entropy + kl_loss
+            loss, kl_loss, cross_entropy = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            loss = loss.mean().squeeze()
+            kl_loss = kl_loss.mean().squeeze()
+            cross_entropy = cross_entropy.mean().squeeze()
             # --------------------------------------------------------------------
 
             #  --------------------- Print and plot  -------------------------------------------------------------------
             kl_epch += kl_loss.data
             recon_epch += cross_entropy.data
             
-            if i % int(num_mb/6) == 0:
+            if i % int(num_mb/12) == 0:
                 print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({}); recons_loss: {:.4} ({}); best_loss: {:.4};'.format(i, \
                 loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, loss_best2))
 
@@ -220,14 +221,18 @@ if(params.training):
                     loss_best2 = loss.data
                     lk_b = cross_entropy.data
                     kl_b = kl_loss.data
-                    
+
             # -------------------------------------------------------------------------------------------------------------- 
             
             # ------------------------ Propogate loss -----------------------------------
+            # boom = get_gpu_memory_map(boom)
             loss.backward()
+            # boom = get_gpu_memory_map(boom)
             del loss
             optimizer.step()
+            # boom = get_gpu_memory_map(boom)
             optimizer.zero_grad()
+            # boom = get_gpu_memory_map(boom)
             # ----------------------------------------------------------------------------
 
         kl_epch/= num_mb

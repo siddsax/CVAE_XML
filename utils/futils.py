@@ -13,7 +13,8 @@ from sklearn import preprocessing
 from torch.autograd import Variable
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
-
+import data_helpers
+import subprocess
 def weights_init(m):
     torch.nn.init.xavier_uniform_(m.weight.data)
 
