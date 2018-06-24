@@ -16,15 +16,15 @@ class encoder(torch.nn.Module):
         super(encoder, self).__init__()
         
         self.l0 = nn.Linear(X_dim + y_dim, 3*h_dim, bias=True)
-        self.l1 = nn.DataParallel(nn.ReLU())
+        self.l1 = nn.ReLU()
         self.bn = nn.BatchNorm1d(3*h_dim)
         
         self.l2 = nn.Linear(3*h_dim, h_dim, bias=True)
-        self.l3 = nn.DataParallel(nn.ReLU())
+        self.l3 = nn.ReLU()
         self.bn2 = nn.BatchNorm1d(h_dim)
         
         # self.l4 = nn.Linear(2*h_dim, h_dim, bias=True)
-        # self.l5 = nn.DataParallel(nn.ReLU())
+        # self.l5 = nn.ReLU()
         # self.bn3 = nn.BatchNorm1d(h_dim)
 
         self.mu = nn.Linear(h_dim, Z_dim, bias=True)
@@ -35,12 +35,7 @@ class encoder(torch.nn.Module):
         # torch.nn.init.xavier_uniform_(self.l4.weight)
         torch.nn.init.xavier_uniform_(self.mu.weight)
         torch.nn.init.xavier_uniform_(self.var.weight)
-        
-        self.l0 = nn.DataParallel(self.l0)
-        self.l2 = nn.DataParallel(self.l2)
-        # self.l4 = nn.DataParallel(self.l4)
-        self.mu = nn.DataParallel(self.mu)
-        self.var = nn.DataParallel(self.var)
+
         
     def forward(self, inputs):
         

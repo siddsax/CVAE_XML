@@ -39,10 +39,6 @@ def count_parameters(model):
     for p in model.parameters():
         if p.requires_grad:
             a += p.numel()
-            # print("Num params of the paramter filled layer {0}".format(p.numel())) #, Num params {1}
-        # else:
-            # print("This layer is without params")# {0}".format(type(p).__name__,))
-    # print("*"*100)
     return a
 
 def effective_k(k, d):
@@ -61,19 +57,6 @@ def gen_model_file(params):
          params.pooling_type, params.hidden_dims, params.batch_size,
          params.model_variation, params.pretrain_type, params.beta)
     return file_name
-
-def bce_loss(y_pred, y):
-    y_pred_1 = torch.log(y_pred)
-    y_pred_2 = torch.log(1 - y_pred)
-    t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
-    if(t<0):
-        print(y_pred)
-        print(y_pred_1)
-        print(y_pred*y)
-        print(y_pred_1*(1-y))
-        print(torch.mean(y_pred*y + y_pred_1*(1-y),dim=0))
-        print(t)
-    return t
 
 def load_data(params):
     X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
