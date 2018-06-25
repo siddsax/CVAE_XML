@@ -27,7 +27,7 @@ from sklearn.externals import joblib
 from futils import *
 from loss import loss
 from CNN_encoder_decoder import cnn_encoder_decoder
-
+import timeit
 viz = Visdom()
 # ------------------------ Params -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Process some integers.')
@@ -67,6 +67,8 @@ params = parser.parse_args()
 params.pad_token = "<PAD/>"
 params.go_token = '<GO/>'
 params.end_token = '<END/>'
+
+b = time.time()
 
 if(len(params.model_name)==0):
     params.model_name = "Gen_data_CNN_Z_dim-{}_mb_size-{}_h_dim-{}_preproc-{}_beta-{}_final_ly-{}_loss-{}_sequence_length-{}\_embedding_dim-{}_params.vocab_size={};"\
@@ -171,7 +173,8 @@ if(params.training):
             else:
                 print(model);print("%"*100)
                 print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
-                model = nn.DataParallel(model.cuda())
+                # model = nn.DataParallel(model.cuda())
+                model = model.cuda()
 
         else:
             dtype_f = torch.FloatTensor
@@ -202,8 +205,8 @@ if(params.training):
             decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(dtype_i))
             decoder_target = decoder_target.view(-1)
             # -----------------------------------------------------------------------------------
-
             loss, kl_loss, cross_entropy = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+
             loss = loss.mean().squeeze()
             kl_loss = kl_loss.mean().squeeze()
             cross_entropy = cross_entropy.mean().squeeze()
@@ -225,14 +228,10 @@ if(params.training):
             # -------------------------------------------------------------------------------------------------------------- 
             
             # ------------------------ Propogate loss -----------------------------------
-            # boom = get_gpu_memory_map(boom)
             loss.backward()
-            # boom = get_gpu_memory_map(boom)
             del loss
             optimizer.step()
-            # boom = get_gpu_memory_map(boom)
             optimizer.zero_grad()
-            # boom = get_gpu_memory_map(boom)
             # ----------------------------------------------------------------------------
 
         kl_epch/= num_mb
@@ -242,18 +241,14 @@ if(params.training):
             best_epch_loss = loss_epch
             if not os.path.exists('saved_models/' + params.model_name ):
                 os.makedirs('saved_models/' + params.model_name)
-            torch.save(emb, "saved_models/" + params.model_name + "/emb_best")
-            torch.save(enc, "saved_models/" + params.model_name + "/enc_best")
-            torch.save(dec, "saved_models/" + params.model_name + "/dec_best")
+            torch.save(model, "saved_models/" + params.model_name + "/model_best")
 
         print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
         print("="*50)
 
         if params.save:
             if epoch % params.save_step == 0:
-                torch.save(emb, "saved_models/" + params.model_name + "/emb_best")
-                torch.save(enc, "saved_models/" + params.model_name + "/enc_best")
-                torch.save(dec, "saved_models/" + params.model_name + "/dec_best")
+                torch.save(model, "saved_models/" + params.model_name + "/model_" + str(epoch))
 
         if(params.disp_flg):
             if(epoch==0):

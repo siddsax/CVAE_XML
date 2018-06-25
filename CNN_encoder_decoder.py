@@ -57,7 +57,8 @@ class cnn_encoder_decoder(nn.Module):
             z = z.cuda(b)
             logits = self.decoder.forward(decoder_input, z, batch_y)
             logits = logits.view(-1, self.params.vocab_size)
-            kl_loss = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
+            # kl_loss = (-0.5 * torch.sum(z_lvar - torch.pow(z_mu, 2) - torch.exp(z_lvar) + 1, 1)).mean().squeeze()
+            kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_lvar) + z_mu**2 - 1. - z_lvar, 1))
             cross_entropy = torch.nn.functional.cross_entropy(logits, decoder_target.cuda(2))
             cross_entropy = cross_entropy.cuda(a)
             if(cross_entropy<0):
