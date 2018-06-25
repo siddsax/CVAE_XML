@@ -29,7 +29,8 @@ class cnn_encoder(torch.nn.Module):
         self.conv_layers = nn.ModuleList()
         self.pool_layers = nn.ModuleList()
         fin_l_out_size = 0
-        self.bn_in = nn.BatchNorm1d(args.sequence_length)
+        
+        self.bn_1 = nn.BatchNorm1d(args.sequence_length)
         self.drp0 = nn.Dropout(p=.25)
 
         for fsz in args.filter_sizes:
@@ -46,23 +47,23 @@ class cnn_encoder(torch.nn.Module):
             self.conv_layers.append(l_conv)
             self.pool_layers.append(l_pool)
 
-        self.bn1 = nn.BatchNorm1d(fin_l_out_size)
+        self.bn_2 = nn.BatchNorm1d(fin_l_out_size)
         self.mu = nn.Linear(fin_l_out_size, args.Z_dim, bias=True)
         self.var = nn.Linear(fin_l_out_size, args.Z_dim, bias=True)
         torch.nn.init.xavier_uniform_(self.var.weight)
         torch.nn.init.xavier_uniform_(self.mu.weight)
 
     def forward(self, inputs, batch_y):
-        o0 = self.drp0(self.bn_in(inputs)) 
+        # o0 = self.drp0(self.bn_1(inputs)).permute(0,2,1)
+        o0 = self.drp0(inputs).permute(0,2,1) 
         conv_out = []
         k = 0
 
         for i in range(len(self.args.filter_sizes)):
-            o = o0.permute(0,2,1)
-            o = self.conv_layers[i](o)
-            o = nn.functional.relu(o)
+            o = self.conv_layers[i](o0)
             o = o.view(o.shape[0], 1, o.shape[1]*o.shape[2])
             o = self.pool_layers[i](o)
+            o = nn.functional.relu(o)
             o = o.view(o.shape[0],-1)
             conv_out.append(o)
             del o
@@ -72,5 +73,5 @@ class cnn_encoder(torch.nn.Module):
         else:
             o = conv_out[0]
         del conv_out
-        o = self.bn1(o)
+        # o = self.bn_2(o)
         return self.mu(o),self.var(o)

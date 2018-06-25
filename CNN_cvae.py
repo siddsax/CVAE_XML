@@ -173,8 +173,8 @@ if(params.training):
             else:
                 print(model);print("%"*100)
                 print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
-                # model = nn.DataParallel(model.cuda())
-                model = model.cuda()
+                model = nn.DataParallel(model.cuda())
+                # model = model.cuda()
 
         else:
             dtype_f = torch.FloatTensor
