@@ -14,6 +14,7 @@ from torch.autograd import Variable
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
 import data_helpers
+import scipy
 import subprocess
 def weights_init(m):
     torch.nn.init.xavier_uniform_(m.weight.data)
@@ -66,3 +67,39 @@ def load_data(params):
     Y_trn = Y_trn.astype(np.int32)
     Y_tst = Y_tst.astype(np.int32)
     return X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params
+
+
+def sample_z(mu, log_var, params):
+    eps = Variable(torch.randn(log_var.shape[0], params.Z_dim).type(params.dtype))
+    k = torch.exp(log_var / 2) * eps
+    return mu + k
+
+def load_data(X, Y, params, batch=True):
+    if(batch):
+        a = np.random.randint(0,params.N, size=params.mb_size)
+        if isinstance(X, scipy.sparse.csr.csr_matrix) or isinstance(X, scipy.sparse.csc.csc_matrix):
+            X, c = X[a].todense(), Y[a].todense()
+        else:
+            X, c = X[a], Y[a]
+            
+    else:
+        if isinstance(X, scipy.sparse.csr.csr_matrix) or isinstance(X, scipy.sparse.csc.csc_matrix):
+            X, c = X.todense(), Y.todense()
+        else:
+            X, c = X, Y
+    
+    X = Variable(torch.from_numpy(X.astype('float32')).type(params.dtype))
+    Y = Variable(torch.from_numpy(c.astype('float32')).type(params.dtype))
+    return X,Y
+
+def write_grads(model, thefile):
+    grads = []
+    for key, value in model.named_parameters():
+        if(value.grad is not None):
+            grads.append(value.grad.mean().squeeze().cpu().numpy())
+
+    thefile = open('gradient_classifier.txt', 'a+')
+    for item in grads:
+        thefile.write("%s " % item)
+    thefile.write("\n" % item)
+    thefile.close()

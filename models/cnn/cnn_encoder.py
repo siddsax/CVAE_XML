@@ -74,4 +74,4 @@ class cnn_encoder(torch.nn.Module):
             o = conv_out[0]
         del conv_out
         # o = self.bn_2(o)
-        return self.mu(o),self.var(o)
+        return o

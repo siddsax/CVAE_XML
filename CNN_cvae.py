@@ -10,13 +10,14 @@ from torch.autograd import Variable
 import sys
 import numpy as np
 sys.path.append('utils/')
-sys.path.append('models/')
+sys.path.append('models/cnn')
 import data_helpers 
 
 from w2v import *
 from embedding_layer import embedding_layer
 from cnn_decoder import cnn_decoder
 from cnn_encoder import cnn_encoder
+from classifier import classifier
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 import scipy.io as sio
@@ -124,6 +125,7 @@ go_row = np.ones((params.mb_size,1))*vocabulary[params.go_token]
 end_row = np.ones((params.mb_size,1))*vocabulary[params.end_token]
 X_dim = x_tr.shape[1]
 y_dim = y_tr.shape[1]
+params.y_dim = y_dim
 N = x_tr.shape[0]
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
@@ -258,44 +260,44 @@ if(params.training):
                 loss_old = loss_epch
             if(epoch % 100 == 0 ):
                 win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
-# else:
-#     seed = np.random.normal(size=[1, params.Z_dim])
-#     seed = Variable(torch.from_numpy(seed).float().type(dtype_f))
-#     if use_cuda:
-#         seed = seed.cuda()
+else:
+    seed = np.random.normal(size=[1, params.Z_dim])
+    seed = Variable(torch.from_numpy(seed).float().type(dtype_f))
+    if use_cuda:
+        seed = seed.cuda()
 
-#     decoder_word_input_np, _ = batch_loader.go_input(1)
-#     decoder_word_input = Variable(torch.from_numpy(decoder_word_input_np).long().type(dtype_i))
+    decoder_word_input_np, _ = batch_loader.go_input(1)
+    decoder_word_input = Variable(torch.from_numpy(decoder_word_input_np).long().type(dtype_i))
 
-#     if use_cuda:
-#         decoder_word_input = decoder_word_input.cuda()
+    if use_cuda:
+        decoder_word_input = decoder_word_input.cuda()
 
-#     result = ''
+    result = ''
 
-    # for i in range(seq_len):
-    #     logits, _ = self(0., None, None,
-    #                         decoder_word_input,
-    #                         seed)
+    for i in range(seq_len):
+        logits, _ = self(0., None, None,
+                            decoder_word_input,
+                            seed)
 
-    #     [_, sl, _] = logits.size()
+        [_, sl, _] = logits.size()
 
-    #     logits = logits.view(-1, self.params.word_vocab_size)
-    #     prediction = F.softmax(logits)
-    #     prediction = prediction.view(1, sl, -1)
+        logits = logits.view(-1, self.params.word_vocab_size)
+        prediction = F.softmax(logits)
+        prediction = prediction.view(1, sl, -1)
 
-    #     # take the last word from prefiction and append it to result
-    #     word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[0, -1])
+        # take the last word from prefiction and append it to result
+        word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[0, -1])
 
-    #     if word == batch_loader.end_token:
-    #         break
+        if word == batch_loader.end_token:
+            break
 
-    #     result += ' ' + word
+        result += ' ' + word
 
-    #     word = np.array([[batch_loader.word_to_idx[word]]])
+        word = np.array([[batch_loader.word_to_idx[word]]])
 
-    #     decoder_word_input_np = np.append(decoder_word_input_np, word, 1)
-    #     decoder_word_input = Variable(t.from_numpy(decoder_word_input_np).long())
+        decoder_word_input_np = np.append(decoder_word_input_np, word, 1)
+        decoder_word_input = Variable(t.from_numpy(decoder_word_input_np).long())
 
-    #     if use_cuda:
-    #         decoder_word_input = decoder_word_input.cuda()
+        if use_cuda:
+            decoder_word_input = decoder_word_input.cuda()
 

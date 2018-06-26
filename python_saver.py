@@ -15,11 +15,11 @@ from scipy.sparse import *
 x_n_sp = csr_matrix(x_n)
 y_n_sp = csr_matrix(y_n)
 from scipy.io import savemat
-#savemat('../fastxml/manik/x_big_notmanik', {'x_big':x_n_sp})
-#savemat('../fastxml/manik/y_big_notmanik', {'y_big':y_n_sp})
+savemat('../fastxml/manik/x_big_notmanik', {'x_big':x_n_sp})
+savemat('../fastxml/manik/y_big_notmanik', {'y_big':y_n_sp})
 
-#savemat('../fastxml/manik/x_big_notmanik_test', {'xt':xt_o})
-#savemat('../fastxml/manik/y_big_notmanik_test', {'yt':yt_o})
+savemat('../fastxml/manik/x_big_notmanik_test', {'xt':xt_o})
+savemat('../fastxml/manik/y_big_notmanik_test', {'yt':yt_o})
 savemat('../fastxml/manik/x_from_site', {'x_big':x_o})
 savemat('../fastxml/manik/y_from_site', {'y_big':y_o})
 

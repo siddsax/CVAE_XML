@@ -30,7 +30,7 @@ parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do
 parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
-parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Rate')
+parser.add_argument('--lr', dest='lr', type=int, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=100, help='step for displaying loss')
 parser.add_argument('--b', dest='beta', type=float, default=1.0, help='factor multipied to likelihood param')
@@ -139,15 +139,15 @@ if(args.training):
         recon_epch = 0
         for it in range(int(num_mb)):
             # ---------------------------------- Sample Train Data -------------------------------
-            a = it*args.mb_size%(N-args.mb_size)
-            X, Y = x_tr[a:a+args.mb_size], y_tr[a:a+args.mb_size]
+            a = np.random.randint(0,N, size=args.mb_size)#it*args.mb_size%(N-args.mb_size)
+            X, Y = x_tr[a], y_tr[a]
             X = Variable(torch.from_numpy(X.astype('float32')).type(dtype))
             Y = Variable(torch.from_numpy(Y.astype('float32')).type(dtype))
             # -----------------------------------------------------------------------------------
 
             # ----------- Encode (X, Y) --------------------------------------------
-            inp = torch.cat([X, Y],1).type(dtype)
-            z_mu, z_var  = Q.forward(inp)
+            # inp = torch.cat([X, Y],1).type(dtype)
+            z_mu, z_var  = Q.forward(X)
             z = sample_z(z_mu, z_var)
             kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_var) + z_mu**2 - 1. - z_var, 1))
             # ---------------------------------------------------------------
@@ -194,7 +194,7 @@ if(args.training):
         
         kl_epch/= num_mb
         recon_epch/= num_mb
-        loss_epch = kl_epch + recon_epch
+        loss_epch = kl_epch + args.beta*recon_epch
         if(loss_epch<best_epch_loss):
             best_epch_loss = loss_epch
             if not os.path.exists('saved_models/' + args.model_name ):

@@ -134,7 +134,7 @@ X_dim = x_tr.shape[1]
 print(X_dim)
 # print(y_dim)
 print(new_y.shape)
-P = torch.load('saved_models/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1/P_best')
+P = torch.load('saved_models/Gen_data_Z_dim-200_mb_size-100_h_dim-600_preproc-1_beta-1.01_final_ly-Sigmoid_loss-MSLoss/P_best')
 # P = decoder(X_dim, y_dim, args.h_dim, args.Z_dim)
 # P.load_state_dict(torch.load('saved_models/' + args.model_name + '/P_best'))
 if(torch.cuda.is_available()):
@@ -152,8 +152,8 @@ X_sample = P.forward(inp)
 
 new_x = scaler.inverse_transform(X_sample.data)
 
-if not os.path.exists('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1' ):
-    os.makedirs('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1')
-np.save('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1/new_x', np.around(new_x, decimals=4))
-np.save('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_pp_flg-1_beta-1/new_y', new_y)
+if not os.path.exists('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_preproc-1_beta-1.01_final_ly-Sigmoid_loss-MSLoss' ):
+    os.makedirs('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_preproc-1_beta-1.01_final_ly-Sigmoid_loss-MSLoss')
+np.save('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_preproc-1_beta-1.01_final_ly-Sigmoid_loss-MSLoss/new_x', np.around(new_x, decimals=4))
+np.save('datasets/Gen_data_Z_dim-200_mb_size-100_h_dim-600_preproc-1_beta-1.01_final_ly-Sigmoid_loss-MSLoss/new_y', new_y)
 

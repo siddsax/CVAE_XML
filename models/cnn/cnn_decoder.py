@@ -45,10 +45,8 @@ class cnn_decoder(nn.Module):
     def forward(self, decoder_input, z, batch_y):
         [batch_size, seq_len, embed_size] = decoder_input.size()
         z = torch.cat([z, batch_y], 1)
-        
         z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim + self.params.classes)
         x = torch.cat([decoder_input, z], 2)
-        # x = self.bn_1(x)
         x = x.transpose(1, 2).contiguous()
         x = self.drp(x)
         for layer in range(len(self.params.decoder_kernels)):
@@ -56,7 +54,6 @@ class cnn_decoder(nn.Module):
             x_width = x.size()[2]
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
             x = self.relu(x)
-            # x = self.bn_x[layer](x)
         x = x.transpose(1, 2).contiguous()
         if(self.params.multi_gpu):
             x = x.cuda(2)

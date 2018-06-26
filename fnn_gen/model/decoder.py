@@ -20,15 +20,15 @@ class decoder(torch.nn.Module):
         self.l1 = nn.ReLU()
         self.bn = nn.BatchNorm1d(h_dim + y_dim)
 
-        self.l2 = nn.Linear(h_dim + y_dim, 2*h_dim + y_dim, bias=True)
+        self.l2 = nn.Linear(h_dim + y_dim, h_dim + y_dim, bias=True)
         self.l3 = nn.ReLU()
-        self.bn2 = nn.BatchNorm1d(2*h_dim + y_dim)
+        self.bn2 = nn.BatchNorm1d(h_dim + y_dim)
         
-        self.l4 = nn.Linear(2*h_dim + y_dim, 3*h_dim + y_dim, bias=True)
+        self.l4 = nn.Linear(h_dim + y_dim, 2*h_dim + y_dim, bias=True)
         self.l5 = nn.ReLU()
-        self.bn3 = nn.BatchNorm1d(3*h_dim + y_dim)
+        self.bn3 = nn.BatchNorm1d(2*h_dim + y_dim)
 
-        self.l6 = nn.Linear(3*h_dim + y_dim, X_dim, bias=True)
+        self.l6 = nn.Linear(2*h_dim + y_dim, X_dim, bias=True)
 
         if(fin_layer == "Sigmoid"):
             self.l7 = nn.Sigmoid()
