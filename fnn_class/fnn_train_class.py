@@ -22,7 +22,7 @@ from visdom import Visdom
 from sklearn.externals import joblib 
 from futils import *
 from loss import loss
-from fnn_model_class import fnn_model_class 
+from fnn_model_class import * 
 from fnn_test_class import test
 
 def train(x_tr, y_tr, x_te, y_te, params):
@@ -52,11 +52,13 @@ def train(x_tr, y_tr, x_te, y_te, params):
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
     for epoch in range(params.num_epochs):
+        alpha = min(1.0, epoch*10e3)#0.0
         kl_epch = 0
         recon_epch = 0
         for it in range(int(num_mb)):
             X, Y = load_data(x_tr, y_tr, params)
             loss, kl_loss, recon_loss = model(X, Y)
+            loss = alpha*kl_loss + params.beta*recon_loss
             kl_epch += kl_loss.data
             recon_epch += recon_loss.data
             if it % int(num_mb/3) == 0:
@@ -69,7 +71,14 @@ def train(x_tr, y_tr, x_te, y_te, params):
             # ------------------------ Propogate loss -----------------------------------
             loss.backward()
             del loss
-            optimizer.step()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
+            for p in model.parameters():
+                p.data.add_(-params.lr, p.grad.data)
+            # optimizer.step()
+            if(it % int(num_mb/3) == 0):
+                thefile = open('gradient_classifier.txt', 'a+')
+                write_grads(model, thefile)
+            optimizer.zero_grad()
             # ----------------------------------------------------------------------------
         
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 
@@ -84,10 +93,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
         print('End-of-Epoch: Epoch: {}; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.\
         format(epoch, loss_epch, kl_epch, recon_epch, best_epch_loss))
-        thefile = open('gradient_classifier.txt', 'a+')
-        write_grads(model, thefile)
-        best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
-        optimizer.zero_grad()
+        # best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
         print("="*50)
         
         # --------------- Periodical Save and Display -----------------------------------------------------

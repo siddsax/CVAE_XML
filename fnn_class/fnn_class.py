@@ -22,10 +22,13 @@ from visdom import Visdom
 from sklearn.externals import joblib 
 from futils import *
 from loss import loss
-from fnn_model_class import fnn_model_class 
+from fnn_model_class import * 
 from fnn_test_class import test
 from fnn_train_class import train
+from dig_model import dig
+import sys
 
+sys.dont_write_bytecode = True
 # from pycrayon import CrayonClient
 
 
@@ -44,6 +47,7 @@ parser.add_argument('--sve', dest='save', type=int, default=1, help='save models
 parser.add_argument('--ss', dest='save_step', type=int, default=100, help='gap between model saves')
 parser.add_argument('--mn', dest='model_name', type=str, default='', help='model name')
 parser.add_argument('--tr', dest='training', type=int, default=1, help='model name')
+parser.add_argument('--te', dest='testing', type=int, default=0, help='model name')
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
@@ -51,6 +55,7 @@ parser.add_argument('--pp', dest='pp_flg', type=int, default=0, help='1 is for m
 parser.add_argument('--loss', dest='loss_type', type=str, default="L1Loss", help='model name')
 
 params = parser.parse_args()
+params.clip = 5
 # --------------------------------------------------------------------------------------------------------------
 if(len(params.model_name)==0):
     params.model_name = "Classify_MLP_Z_dim-{}_mb_size-{}_h_dim-{}_pp_flg-{}_beta-{}_dataset-{}_final_ly-{}_loss-{}".format(params.Z_dim, params.mb_size, \
@@ -94,7 +99,9 @@ else:
 
 # -----------------------------------------------------------------------------
 
-if(params.training):
+if(params.training and not params.testing):
     train(x_tr, y_tr, x_te, y_te, params)
-else:
+elif(params.testing):
     test(x_te, y_te, params)
+else:
+    dig(x_tr, y_tr, x_te, y_te, params)

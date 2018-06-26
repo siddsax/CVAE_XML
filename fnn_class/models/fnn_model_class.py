@@ -24,7 +24,7 @@ from visdom import Visdom
 from sklearn.externals import joblib 
 from futils import *
 from loss import loss
-
+import math
 class fnn_model_class(nn.Module):
     def __init__(self, params):
         super(fnn_model_class, self).__init__()
@@ -50,7 +50,12 @@ class fnn_model_class(nn.Module):
             print(batch_y[0:100])
             sys.exit()
         # ---------------------------------------------------------------------
-
+        if(math.isnan(kl_loss)):
+            print(z_var)
+            sys.exit()
+        if(math.isnan(recon_loss)):
+            print("------======----------")
+            sys.exit()
         # ------------ Loss --------------------------------------------------
         loss = self.params.beta*recon_loss + kl_loss
         # --------------------------------------------------------------------
@@ -58,13 +63,3 @@ class fnn_model_class(nn.Module):
         # return loss.view(-1,1), kl_loss.view(-1,1), recon_loss.view(-1,1)
         return loss, kl_loss, recon_loss
     
-    def test(self, X, Y):
-        z_mu, z_var  = self.encoder.forward(X)
-        kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_var) + z_mu**2 - 1. - z_var, 1))
-        # ---------------------------------------------------------------
-        
-        # ----------- Decode (X, z) --------------------------------------------
-        Y_sample = self.decoder.forward(z_mu).data
-        recon_loss = self.params.loss_fn(Y_sample, Y)
-        loss = self.params.beta*recon_loss + kl_loss
-        return Y_sample, loss, kl_loss, recon_loss

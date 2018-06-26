@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
 from torch.autograd import Variable
+import sys
 # from pycrayon import CrayonClient
 
 class encoder(torch.nn.Module):
@@ -32,9 +33,21 @@ class encoder(torch.nn.Module):
     def forward(self, inputs):
         
         o = self.l0(inputs)
+        if(torch.isnan(o).any()):
+            np.set_printoptions(threshold='nan')
+            print(inputs)
+            print(self.l0.weight)
+            print(torch.isnan(self.l0.weight).any())
+            print(torch.isnan(self.l0.bias).any())
+            sys.exit()
         o = self.l1(o)
         o = self.bn(o)
         o_ = self.mu(o)
         o__ = self.var(o)
-
+        if(torch.isnan(o__).any()):
+            print(torch.isnan(inputs).any())
+            print(torch.isnan(o_).any())
+            print(torch.isnan(o__).any())
+            print("Boobs")
+            sys.exit()
         return o_, o__

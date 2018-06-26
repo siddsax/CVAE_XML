@@ -20,7 +20,7 @@ class loss:
         t = torch.mean(torch.norm((X_sample - X),1),dim=0) 
         return t
     
-    def BCELoss(self, y_pred, y, eps = 1e-4):
+    def BCELoss(self, y_pred, y, eps = 1e-100):
         y_pred_1 = torch.log(y_pred+ eps)
         y_pred_2 = torch.log(1 - y_pred + eps)
         t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
