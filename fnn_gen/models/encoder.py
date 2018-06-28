@@ -1,34 +1,25 @@
-import torch
-import torch.nn as nn
-# import torch.nn.functional as nn
-import torch.autograd as autograd
-import torch.optim as optim
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import os
-from torch.autograd import Variable
+from header import *
 
 class encoder(torch.nn.Module):
 
-    def __init__(self, X_dim, y_dim, h_dim, Z_dim):
+    def __init__(self, params):
         
         super(encoder, self).__init__()
         
-        self.l0 = nn.Linear(X_dim, 3*h_dim, bias=True)
+        self.l0 = nn.Linear(params.X_dim, 3*params.h_dim, bias=True)
         self.l1 = nn.ReLU()
-        self.bn = nn.BatchNorm1d(3*h_dim)
+        self.bn = nn.BatchNorm1d(3*params.h_dim)
         
-        self.l2 = nn.Linear(3*h_dim, 2*h_dim, bias=True)
+        self.l2 = nn.Linear(3*params.h_dim, 2*params.h_dim, bias=True)
         self.l3 = nn.ReLU()
-        self.bn2 = nn.BatchNorm1d(2*h_dim)
+        self.bn2 = nn.BatchNorm1d(2*params.h_dim)
         
-        self.l4 = nn.Linear(2*h_dim, h_dim, bias=True)
+        self.l4 = nn.Linear(2*params.h_dim, params.h_dim, bias=True)
         self.l5 = nn.ReLU()
-        self.bn3 = nn.BatchNorm1d(h_dim)
+        self.bn3 = nn.BatchNorm1d(params.h_dim)
 
-        self.mu = nn.Linear(h_dim, Z_dim, bias=True)
-        self.var = nn.Linear(h_dim, Z_dim, bias=True)
+        self.mu = nn.Linear(params.h_dim, params.Z_dim, bias=True)
+        self.var = nn.Linear(params.h_dim, params.Z_dim, bias=True)
         
         torch.nn.init.xavier_uniform_(self.l0.weight)
         torch.nn.init.xavier_uniform_(self.l2.weight)

@@ -1,19 +1,4 @@
-import os
-import sys
-import torch
-import random
-
-import numpy as np
-import torch.nn as nn
-import scipy.sparse as sp
-import torch.optim as optim
-sys.path.insert(0, '../utils')
-
-from w2v import load_word2vec
-import matplotlib.pyplot as plt
-import torch.autograd as autograd
-from torch.autograd import Variable
-import matplotlib.gridspec as gridspec
+from header import *
 
 class embedding_layer(torch.nn.Module):
 

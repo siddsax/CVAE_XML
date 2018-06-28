@@ -51,7 +51,7 @@ def train_word2vec(sentence_matrix, vocabulary_inv,
     return embedding_weights
 
 
-def load_word2vec(model_type, vocabulary_inv, num_features=300):
+def load_word2vec(params):
     """
     loads Word2Vec model
     Returns initial weights for embedding layer.
@@ -64,34 +64,34 @@ def load_word2vec(model_type, vocabulary_inv, num_features=300):
 
     model_dir = 'word2vec_models'
 
-    if model_type == 'GoogleNews':
+    if params.model_type == 'GoogleNews':
         model_name = join(model_dir, 'GoogleNews-vectors-negative300.bin.gz')
-        assert(num_features == 300)
+        assert(params.num_features == 300)
         assert(exists(model_name))
         print('Loading existing Word2Vec model (GoogleNews-300)')
         embedding_model = word2vec.Word2Vec.load_word2vec_format(model_name, binary=True)
 
-    elif model_type == 'glove':
-        model_name = join(model_dir, 'glove.6B.%dd.txt' % (num_features))
+    elif params.model_type == 'glove':
+        model_name = join(model_dir, 'glove.6B.%dd.txt' % (params.num_features))
         assert(exists(model_name))
-        print('Loading existing Word2Vec model (Glove.6B.%dd)' % (num_features))
+        print('Loading existing Word2Vec model (Glove.6B.%dd)' % (params.num_features))
 
         # dictionary, where key is word, value is word vectors
         embedding_model = {}
         for line in open(model_name, 'r'):
             tmp = line.strip().split()
             word, vec = tmp[0], map(float, tmp[1:])
-            assert(len(vec) == num_features)
+            assert(len(vec) == params.num_features)
             if word not in embedding_model:
                 embedding_model[word] = vec
         assert(len(embedding_model) == 400000)
 
     else:
-        raise ValueError('Unknown pretrain model type: %s!' % (model_type))
+        raise ValueError('Unknown pretrain model type: %s!' % (params.model_type))
 
     embedding_weights = [embedding_model[w] if w in embedding_model
-                         else np.random.uniform(-0.25, 0.25, num_features)
-                         for w in vocabulary_inv]
+                         else np.random.uniform(-0.25, 0.25, params.num_features)
+                         for w in params.vocabulary_inv]
     embedding_weights = np.array(embedding_weights).astype('float32')
 
     return embedding_weights
@@ -100,6 +100,6 @@ def load_word2vec(model_type, vocabulary_inv, num_features=300):
 if __name__=='__main__':
     import data_helpers
     print("Loading data...")
-    x, _, _, vocabulary_inv = data_helpers.load_data()
-    w = train_word2vec(x, vocabulary_inv)
+    x, _, _, params.vocabulary_inv = data_helpers.load_data()
+    w = train_word2vec(x, params.vocabulary_inv)
 

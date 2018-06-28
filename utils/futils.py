@@ -16,6 +16,7 @@ import matplotlib.gridspec as gridspec
 import data_helpers
 import scipy
 import subprocess
+from scipy import sparse
 def weights_init(m):
     torch.nn.init.xavier_uniform_(m.weight.data)
 
@@ -60,15 +61,6 @@ def gen_model_file(params):
          params.model_variation, params.pretrain_type, params.beta)
     return file_name
 
-def load_data(params):
-    X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
-    X_trn = X_trn.astype(np.int32)
-    X_tst = X_tst.astype(np.int32)
-    Y_trn = Y_trn.astype(np.int32)
-    Y_tst = Y_tst.astype(np.int32)
-    return X_trn, Y_trn, X_tst, Y_tst, vocabulary, vocabulary_inv, params
-
-
 def sample_z(mu, log_var, params):
     eps = Variable(torch.randn(log_var.shape[0], params.Z_dim).type(params.dtype))
     k = torch.exp(log_var / 2) * eps
@@ -103,3 +95,77 @@ def write_grads(model, thefile):
         thefile.write("%s " % item)
     thefile.write("\n" % item)
     thefile.close()
+
+def save_load_data(params, save=0):
+    params.pad_token = "<PAD/>"
+    params.go_token = '<GO/>'
+    params.end_token = '<END/>'
+    if(save):
+        print("Loading Data")
+        print(params.data_path)
+        x_tr, y_tr, x_te, y_te, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
+        x_tr = x_tr.astype(np.int32)
+        x_te = x_te.astype(np.int32)
+        y_tr = y_tr.astype(np.int32)
+        y_te = y_te.astype(np.int32)
+        params.data_path = '../datasets/rcv/rcv'
+        np.save(params.data_path + '/x_train', x_tr)
+        sparse.save_npz(params.data_path + '/y_train', y_tr)
+        sparse.save_npz(params.data_path + '/y_test', y_te)
+        np.save(params.data_path + '/x_test', x_te)
+        np.save(params.data_path + '/vocab', vocabulary)
+        np.save(params.data_path + '/vocab_inv', vocabulary_inv)
+
+    x_tr = np.load(params.data_path + '/x_train.npy')
+    y_tr = sparse.load_npz(params.data_path + '/y_train.npz').todense()
+    x_te = np.load(params.data_path + '/x_test.npy')
+    y_te = sparse.load_npz(params.data_path + '/y_test.npz').todense()
+    vocabulary = np.load(params.data_path + '/vocab.npy').item()
+    vocabulary_inv = np.load(params.data_path + '/vocab_inv.npy')
+    params.X_dim = x_tr.shape[1]
+    params.y_dim = y_tr.shape[1]
+    params.N = x_tr.shape[0]
+    params.vocab_size = len(vocabulary)
+    params.classes = y_tr.shape[1]
+
+    return x_tr, x_te, y_tr, y_te, vocabulary, vocabulary_inv, params
+
+def load_batch_cnn(x_tr, y_tr, params, batch=True):
+
+    if(batch):
+        params.go_row = np.ones((params.mb_size,1))*params.vocabulary[params.go_token]
+        params.end_row = np.ones((params.mb_size,1))*params.vocabulary[params.end_token]
+        indexes = np.array(np.random.randint(params.N, size=params.mb_size))
+        x_tr, y_tr = x_tr[indexes,:], y_tr[indexes,:]
+    else:
+        params.go_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.go_token]
+        params.end_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.end_token]
+
+    decoder_word_input = np.concatenate((params.go_row,x_tr), axis=1)
+    decoder_target = np.concatenate((x_tr, params.end_row), axis=1)
+    x_tr = Variable(torch.from_numpy(x_tr.astype('int')).type(params.dtype_i))
+    y_tr = Variable(torch.from_numpy(y_tr.astype('float')).type(params.dtype_f))
+    decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')).type(params.dtype_i))
+    decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(params.dtype_i))
+    decoder_target = decoder_target.view(-1)
+
+    return x_tr, y_tr, decoder_word_input, decoder_target
+    
+def update_params(params):
+    if(len(params.model_name)==0):
+        params.model_name = gen_model_file(params)
+    params.decoder_kernels = [(400, params.Z_dim + params.classes + params.embedding_dim, 3),
+                                (450, 400, 3),
+                                (500, 450, 3)]
+    params.decoder_dilations = [1, 2, 4]
+    params.decoder_paddings = [effective_k(w, params.decoder_dilations[i]) - 1
+                                    for i, (_, _, w) in enumerate(params.decoder_kernels)]
+
+    return params
+
+
+def sample_word_from_distribution(params, distribution):
+    ix = np.random.choice(range(params.vocab_size), p=distribution.view(-1))
+    x = np.zeros((params.vocab_size, 1))
+    x[ix] = 1
+    return params.vocabulary_inv[np.argmax(x)]

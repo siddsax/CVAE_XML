@@ -15,7 +15,7 @@ def test(x_te, y_te, params, model=None, best_test_loss=None):
 
     if(model==None):
         model = fnn_model_class(params)
-        model.load_state_dict(torch.load("saved_models/" + params.model_name + "/model_best"))#, map_location=lambda storage, loc: storage)
+        model.load_state_dict(torch.load("saved_models/" + params.model_name + "/model_best",  map_location=lambda storage, loc: storage))#, map_location=lambda storage, loc: storage)
     
     model.eval()
 

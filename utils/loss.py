@@ -13,6 +13,10 @@ from sklearn import preprocessing
 from torch.autograd import Variable
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
+import pdb
+
+def isnan(x):
+    return x != x
 
 class loss:
 
@@ -20,10 +24,17 @@ class loss:
         t = torch.mean(torch.norm((X_sample - X),1),dim=0) 
         return t
     
-    def BCELoss(self, y_pred, y, eps = 1e-100):
+    def BCELoss(self, y_pred, y, eps = 1e-25):
         y_pred_1 = torch.log(y_pred+ eps)
         y_pred_2 = torch.log(1 - y_pred + eps)
         t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
+        if(torch.isnan(t).any()):
+            pdb.set_trace()
+            print(torch.isnan(y_pred_1).any())
+            print(torch.isnan(y_pred_2).any())
+            # t = t.detach().cpu().numpy()
+            print(t)
+            sys.exit()
         if(t<0):
             print(y_pred)
             print(y_pred_1)
