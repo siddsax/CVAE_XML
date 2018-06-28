@@ -12,46 +12,24 @@ def train(x_tr, y_tr, embedding_weights, params):
     best_epch_loss = float('Inf')
     num_mb = np.ceil(params.N/params.mb_size)
     
+    model = cnn_encoder_decoder(params, embedding_weights)
+    if(torch.cuda.is_available()):
+        print("--------------- Using GPU! ---------")
+        model.params.dtype_f = torch.cuda.FloatTensor
+        model.params.dtype_i = torch.cuda.LongTensor
+        
+        model = model.cuda()
+    else:
+        model.params.dtype_f = torch.FloatTensor
+        model.params.dtype_i = torch.LongTensor
+        print("=============== Using CPU =========")
+
+    print(model);print("%"*100)
+    model = nn.DataParallel(model)
+    
     if(len(params.load_model)):
         print(params.load_model)
-        model = cnn_encoder_decoder(params, embedding_weights)
-        model.load_state_dict(torch.load(params.load_model + "/model_best"))
-        print(model.encoder);print(model.decoder);print(model.variational);print(model.classifier);print("%"*100)
-    else:
-        model = cnn_encoder_decoder(params, embedding_weights)
-        print(model.encoder);print(model.decoder);print(model.variational);print(model.classifier);print("%"*100)
-        # a = 0
-        # b = 1
-        if(torch.cuda.is_available()):
-            print("--------------- Using GPU! ---------")
-            model.params.dtype_f = torch.cuda.FloatTensor
-            model.params.dtype_i = torch.cuda.LongTensor
-            
-            if(params.multi_gpu):
-            #     model.embedding_layer.cuda()
-            #     model.encoder.cuda(a)
-            #     model.decoder.conv_layers.cuda(b)
-            #     model.decoder.drp.cuda(b)
-            #     model.decoder.bn_inp.cuda(b)
-            #     model.decoder.bn_1.cuda(b)
-            #     model.decoder.relu.cuda(b)
-            #     model.decoder.sigmoid.cuda(2)
-            #     model.decoder.fc.cuda(2)
-                print("==== Paralyzing =====")
-            #     print(model);print("%"*100)
-            #     print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
-            else:
-                # print(model);print("%"*100)
-                model = nn.DataParallel(model.cuda())
-                # model = model.cuda()
-
-        else:
-            model.params.dtype_f = torch.FloatTensor
-            model.params.dtype_i = torch.LongTensor
-            print("=============== Using CPU =========")
-
-        print(model);print("%"*100)
-        # print("Number of Params : Embed {0}, Encoder {1}, Decoder {2}".format(count_parameters(model.embedding_layer), count_parameters(model.encoder), count_parameters(model.decoder)))
+        model.load_state_dict(torch.load(params.load_model + "/model_best", map_location=lambda storage, loc: storage))
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
