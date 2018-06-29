@@ -62,6 +62,15 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             cey_epch += cross_entropy_y.data
             ceya_epch += cross_entropy_y_act.data
             
+            test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
+            
+            if(test_loss < best_test_loss):
+                print("This loss is better than the previous recored test loss:- {}".format(best_test_loss))
+                best_test_loss = test_loss
+                if not os.path.exists('saved_models/' + params.model_name ):
+                    os.makedirs('saved_models/' + params.model_name)
+                torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
+            
             if i % int(num_mb/12) == 0:
                 print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
                 loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
@@ -101,14 +110,6 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
 
         print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
-        test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
-        
-        if(test_loss < best_test_loss):
-            print("This loss is better than the previous recored test loss:- {}".format(best_test_loss))
-            best_test_loss = test_loss
-            if not os.path.exists('saved_models/' + params.model_name ):
-                os.makedirs('saved_models/' + params.model_name)
-            torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
 
         
         
