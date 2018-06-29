@@ -16,7 +16,7 @@ class cnn_encoder_decoder(nn.Module):
     def forward(self, batch_x, batch_y, decoder_word_input, decoder_target):
         # ----------- Encode (X, Y) --------------------------------------------
         e_emb = self.embedding_layer.forward(batch_x)
-        H = self.encoder.forward(e_emb, batch_y)
+        H = self.encoder.forward(e_emb)
         z_mu, z_lvar = self.variational(H)
         kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_lvar) + z_mu**2 - 1. - z_lvar, 1))
         [batch_size, _] = z_mu.size()

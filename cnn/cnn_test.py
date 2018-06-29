@@ -1,11 +1,17 @@
 from header import *
 from collections import OrderedDict
+from sklearn.metrics import log_loss
 
-def test_gen(x_te, y_te, embedding_weights, params, model=None):
+
+def test_gen(x_te, y_te, params, model=None, embedding_weights=None):
 
     if(model==None):
-        model = cnn_encoder_decoder(params, embedding_weights)
-        model.load_state_dict(torch.load(params.load_model + "/model_best",  map_location=lambda storage, loc: storage))
+        if(embedding_weights==None):
+            print("Error: Embedding weights needed!")
+            exit()
+        else:
+            model = cnn_encoder_decoder(params, embedding_weights)
+            model.load_state_dict(torch.load(params.load_model + "/model_best",  map_location=lambda storage, loc: storage))
     
     if(torch.cuda.is_available()):
         model.params.dtype_f = torch.cuda.FloatTensor
@@ -56,44 +62,58 @@ def test_gen(x_te, y_te, embedding_weights, params, model=None):
     #         if torch.cuda.is_available():
     #             decoder_word_input = decoder_word_input.cuda()
 
-def test_class(x_te, y_te, x_tr, y_tr, embedding_weights, params, model=None):
+def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_weights=None, verbose=True, save=True ):
 
     
     if(model==None):
-        model = cnn_encoder_decoder(params, embedding_weights)
-        # original saved file with DataParallel
-        state_dict = torch.load(params.load_model + "/model_best", map_location=lambda storage, loc: storage)
-        # create new OrderedDict that does not contain `module.`
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            name = k[7:] # remove `module.`
-            new_state_dict[name] = v
-        # load params
-        model.load_state_dict(new_state_dict)
-        # model.load_state_dict(new_state_dict)
-    
+        if(embedding_weights is None):
+            print("Error: Embedding weights needed!")
+            exit()
+        else:
+            model = cnn_encoder_decoder(params, embedding_weights)
+            # state_dict = torch.load(params.load_model + "/model_best", map_location=lambda storage, loc: storage)
+            # new_state_dict = OrderedDict()
+            # for k, v in state_dict.items():
+            #     name = k[7:]
+            #     new_state_dict[name] = v
+            # model.load_state_dict(new_state_dict)
+            # del new_state_dict
+            model.load_state_dict(torch.load(params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage))
     if(torch.cuda.is_available()):
         params.dtype_f = torch.cuda.FloatTensor
         params.dtype_i = torch.cuda.LongTensor
-        model = nn.DataParallel(model.cuda())
+        model = model.cuda()
     else:
         params.dtype_f = torch.FloatTensor
         params.dtype_i = torch.LongTensor
- 
-    x_tr, y_tr, _, _ = load_batch_cnn(x_tr, y_tr, params, batch=False)
 
-    e_emb = model.embedding_layer.forward(x_tr)
-    H = model.encoder.forward(e_emb, y_tr)
-    Y = model.classifier(H)
-    cross_entropy_y = params.loss_fn(Y, y_tr)
-    print('Train Loss; {:.4};'.format(cross_entropy_y.data))#, kl_loss.data, recon_loss.data))
+    if(x_tr is not None and y_tr is not None):
+        if(x_tr.shape[0]%2):
+            x_tr = x_tr[:-1,:]
+            y_tr = y_tr[:-1,:]
+        x_tr, _, _, _ = load_batch_cnn(x_tr, y_tr, params, batch=False)
+        Y = np.zeros(y_tr.shape)
+        for i in range(0,x_tr.shape[0],2):
+            print(i)
+            e_emb = model.embedding_layer.forward(x_tr[i:i+2].view(2, x_te.shape[1]))
+            H = model.encoder.forward(e_emb)
+            Y[i:i+2,:] = model.classifier(H).data
+        cross_entropy_y = log_loss(y_tr, Y)
+        print('Train Loss; {:.4};'.format(cross_entropy_y))#, kl_loss.data, recon_loss.data))
+    
+    y_te = y_te[:,:-1]
+    x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
+    Y2 = np.zeros(y_te.shape)
+    
+    for i in range(0,x_te.shape[0],2):
+        e_emb2 = model.embedding_layer.forward(x_te[i:i+2].view(2, x_te.shape[1]))
+        H2 = model.encoder.forward(e_emb2)
+        Y2[i:i+2,:] = model.classifier(H2).data
 
-    x_te, y_te, _, _ = load_batch_cnn(x_te, y_te[:,:-1], params, batch=False)
-    e_emb2 = model.embedding_layer.forward(x_te)
-    H2 = model.encoder.forward(e_emb2, y_te)
-    Y2 = model.classifier(H2)
-    cross_entropy_y2 = params.loss_fn(Y2, y_te)
-    print('Test Loss; {:.4};'.format(cross_entropy_y2.data))#, kl_loss.data, recon_loss.data))
-    Y_probabs2 = sparse.csr_matrix(Y2.data)
-    sio.savemat('score_matrix.mat' , {'score_matrix': Y_probabs2})
-
+    cross_entropy_y2 = log_loss(y_te, Y2) # Reverse of pytorch
+    
+    print('Test Loss; {:.4};'.format(cross_entropy_y2))#, kl_loss.data, recon_loss.data))
+    if(save):
+        Y_probabs2 = sparse.csr_matrix(Y2)
+        sio.savemat('score_matrix.mat' , {'score_matrix': Y_probabs2})
+    return cross_entropy_y2

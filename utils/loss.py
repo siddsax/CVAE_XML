@@ -25,23 +25,16 @@ class loss:
         return t
     
     def BCELoss(self, y_pred, y, eps = 1e-25):
-        y_pred_1 = torch.log(y_pred+ eps)
-        y_pred_2 = torch.log(1 - y_pred + eps)
-        t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
+        # y_pred_1 = torch.log(y_pred+ eps)
+        # y_pred_2 = torch.log(1 - y_pred + eps)
+        # t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
+        t = torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
         if(torch.isnan(t).any()):
+            print("nan")
             pdb.set_trace()
-            print(torch.isnan(y_pred_1).any())
-            print(torch.isnan(y_pred_2).any())
-            # t = t.detach().cpu().numpy()
-            print(t)
-            sys.exit()
         if(t<0):
-            print(y_pred)
-            print(y_pred_1)
-            print(y_pred*y)
-            print(y_pred_1*(1-y))
-            print(torch.mean(y_pred*y + y_pred_1*(1-y),dim=0))
-            print(t)
+            print("negative")            
+            pdb.set_trace()
         return t
     
     def L1Loss(self, X_sample, X):

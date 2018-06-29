@@ -1,8 +1,9 @@
 from header import *
+from cnn_test import *
 
 # ---------------------------------------------------------------------------------
 
-def train(x_tr, y_tr, embedding_weights, params):
+def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
     viz = Visdom()
     kl_b = float('Inf')
     lk_b = float('Inf')
@@ -10,6 +11,7 @@ def train(x_tr, y_tr, embedding_weights, params):
     cey_b = float('Inf')
     loss_best2 = float('Inf')
     best_epch_loss = float('Inf')
+    best_test_loss = float('Inf')
     num_mb = np.ceil(params.N/params.mb_size)
     
     model = cnn_encoder_decoder(params, embedding_weights)
@@ -25,21 +27,21 @@ def train(x_tr, y_tr, embedding_weights, params):
         print("=============== Using CPU =========")
 
     print(model);print("%"*100)
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
     
     if(len(params.load_model)):
         print(params.load_model)
-        model.load_state_dict(torch.load(params.load_model + "/model_best", map_location=lambda storage, loc: storage))
+        model.load_state_dict(torch.load(params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage))
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
     print('Boom 5')
     # =============================== TRAINING ====================================
     for epoch in range(params.num_epochs):
-        kl_epch = 0
-        recon_epch = 0
-        cey_epch = 0
-        ceya_epch = 0
+        kl_epch = 0.0
+        recon_epch = 0.0
+        cey_epch = 0.0
+        ceya_epch = 0.0
 
         for i in range(int(num_mb)):
             # ------------------ Load Batch Data ---------------------------------------------------------
@@ -83,6 +85,8 @@ def train(x_tr, y_tr, embedding_weights, params):
             optimizer.step()
             optimizer.zero_grad()
             # ----------------------------------------------------------------------------
+            if(epoch==0):
+                break
 
         kl_epch/= num_mb
         recon_epch/= num_mb
@@ -97,6 +101,17 @@ def train(x_tr, y_tr, embedding_weights, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
 
         print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
+        test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
+        
+        if(test_loss < best_test_loss):
+            print("This loss is better than the previous recored test loss:- {}".format(best_test_loss))
+            best_test_loss = test_loss
+            if not os.path.exists('saved_models/' + params.model_name ):
+                os.makedirs('saved_models/' + params.model_name)
+            torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
+
+        
+        
         print("="*50)
 
         if params.save:
@@ -106,9 +121,12 @@ def train(x_tr, y_tr, embedding_weights, params):
         if(params.disp_flg):
             if(epoch==0):
                 loss_old = loss_epch
+                loss_old_t = test_loss
             else:
                 viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
+                viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old_t, test_loss,50), name='2', update='append', win=win)
                 loss_old = loss_epch
+                loss_old_t = test_loss
             if(epoch % 100 == 0 ):
                 win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
 

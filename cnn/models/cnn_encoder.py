@@ -39,7 +39,7 @@ class cnn_encoder(torch.nn.Module):
         # torch.nn.init.xavier_uniform_(self.var.weight)
         # torch.nn.init.xavier_uniform_(self.mu.weight)
 
-    def forward(self, inputs, batch_y):
+    def forward(self, inputs):
         # o0 = self.drp0(self.bn_1(inputs)).permute(0,2,1)
         o0 = self.drp0(inputs).permute(0,2,1) 
         conv_out = []

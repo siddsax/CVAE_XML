@@ -70,8 +70,8 @@ else:
     params.dtype = torch.FloatTensor
 
 if(params.training):
-    train(x_tr, y_tr, embedding_weights, params)
+    train(x_tr, y_tr, x_te, y_te, embedding_weights, params)
 
 else:
-    test_class(x_te, y_te, x_tr, y_tr, embedding_weights, params)
+    test_class(x_te, y_te, params, x_tr=x_tr, y_tr=y_tr, embedding_weights=embedding_weights)
     # test_gen(x_te, y_te, embedding_weights, params)
