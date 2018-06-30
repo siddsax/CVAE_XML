@@ -32,20 +32,21 @@ class cnn_encoder_decoder(nn.Module):
         X_sample = X_sample.view(-1, self.params.vocab_size)
         cross_entropy = torch.nn.functional.cross_entropy(X_sample, decoder_target)
 
+        # print(cross_entropy.shape)
         X_sample = self.decoder.forward(decoder_input, z, batch_y) # Supervised loss on encoder
         X_sample = X_sample.view(-1, self.params.vocab_size)
         cross_entropy_y_act = torch.nn.functional.cross_entropy(X_sample, decoder_target)
         
-        if(cross_entropy<0):
-            print(cross_entropy)
-            print(X_sample[0:100])
-            print(batch_x[0:100])
-            sys.exit()
-        if(cross_entropy_y<0):
-            print(cross_entropy)
-            print(Y[0:100])
-            print(batch_y[0:100])
-            sys.exit()
+        # if((cross_entropy.data<0)):
+        #     print(cross_entropy)
+        #     print(X_sample[0:100])
+        #     print(batch_x[0:100])
+        #     sys.exit()
+        # if((cross_entropy_y.data<0)):
+        #     print(cross_entropy)
+        #     print(Y[0:100])
+        #     print(batch_y[0:100])
+        #     sys.exit()
         # self.params.beta*
         loss = cross_entropy + kl_loss + cross_entropy_y + cross_entropy_y_act
         return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1), cross_entropy_y_act.view(-1,1)
