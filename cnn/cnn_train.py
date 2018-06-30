@@ -62,6 +62,7 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             cey_epch += cross_entropy_y.data
             ceya_epch += cross_entropy_y_act.data
             
+            
             if i % int(num_mb/12) == 0:
                 print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
                 loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
@@ -101,6 +102,7 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
 
         print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
+
         test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
         
         if(test_loss < best_test_loss):
@@ -109,7 +111,6 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             if not os.path.exists('saved_models/' + params.model_name ):
                 os.makedirs('saved_models/' + params.model_name)
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
-
         
         
         print("="*50)
@@ -118,17 +119,17 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             if epoch % params.save_step == 0:
                 torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_" + str(epoch))
 
-        if(params.disp_flg):
-            if(epoch==0):
-                loss_old = loss_epch
-                loss_old_t = test_loss
-            else:
-                viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
-                viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old_t, test_loss,50), name='2', update='append', win=win)
-                loss_old = loss_epch
-                loss_old_t = test_loss
-            if(epoch % 100 == 0 ):
-                win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
+        # if(params.disp_flg):
+        #     if(epoch==0):
+        #         loss_old = loss_epch
+        #         loss_old_t = test_loss
+        #     else:
+        #         viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
+        #         viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old_t, test_loss,50), name='2', update='append', win=win)
+        #         loss_old = loss_epch
+        #         loss_old_t = test_loss
+        #     if(epoch % 100 == 0 ):
+        #         win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
 
 
 

@@ -16,7 +16,7 @@ parser.add_argument('--e', dest='num_epochs', type=int, default=100, help='step 
 parser.add_argument('--b', dest='beta', type=float, default=1, help='factor multipied to likelihood param')
 parser.add_argument('--d', dest='disp_flg', type=int, default=0, help='display graphs')
 parser.add_argument('--sve', dest='save', type=int, default=1, help='save models or not')
-parser.add_argument('--ss', dest='save_step', type=int, default=5000, help='gap between model saves')
+parser.add_argument('--ss', dest='save_step', type=int, default=10, help='gap between model saves')
 parser.add_argument('--mn', dest='model_name', type=str, default='', help='model name')
 parser.add_argument('--tr', dest='training', type=int, default=1, help='model name')
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
