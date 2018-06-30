@@ -63,6 +63,7 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             ceya_epch += cross_entropy_y_act.data[0]
             
             
+            
             if i % int(num_mb/12) == 0:
                 print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
                 loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, cross_entropy_y_act.data[0], ceya_b, loss_best2))
@@ -119,17 +120,17 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             if epoch % params.save_step == 0:
                 torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_" + str(epoch))
 
-        if(params.disp_flg):
-            if(epoch==0):
-                loss_old = loss_epch
-                loss_old_t = test_loss
-            else:
-                viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
-                viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old_t, test_loss,50), name='2', update='append', win=win)
-                loss_old = loss_epch
-                loss_old_t = test_loss
-            if(epoch % 100 == 0 ):
-                win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
+        # if(params.disp_flg):
+        #     if(epoch==0):
+        #         loss_old = loss_epch
+        #         loss_old_t = test_loss
+        #     else:
+        #         viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
+        #         viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old_t, test_loss,50), name='2', update='append', win=win)
+        #         loss_old = loss_epch
+        #         loss_old_t = test_loss
+        #     if(epoch % 100 == 0 ):
+        #         win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
 
 
 

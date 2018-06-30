@@ -88,11 +88,8 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         params.dtype_i = torch.LongTensor
 
 
-    # params.mb_size = params.mb_size*5
+    params.mb_size = params.mb_size*5
     if(x_tr is not None and y_tr is not None):
-        # if(x_tr.shape[0] - rem):
-        #     x_tr = x_tr[:-1,:]
-        #     y_tr = y_tr[:-1,:]
         x_tr, _, _, _ = load_batch_cnn(x_tr, y_tr, params, batch=False)
         Y = np.zeros(y_tr.shape)
         rem = x_tr.shape[0]%params.mb_size
@@ -129,4 +126,5 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
     if(save):
         Y_probabs2 = sparse.csr_matrix(Y2)
         sio.savemat('score_matrix.mat' , {'score_matrix': Y_probabs2})
+    params.mb_size = params.mb_size/5
     return cross_entropy_y2
