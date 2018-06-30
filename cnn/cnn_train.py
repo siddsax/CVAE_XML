@@ -5,13 +5,13 @@ from cnn_test import *
 
 def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
     viz = Visdom()
-    kl_b = float('Inf')
-    lk_b = float('Inf')
-    ceya_b = float('Inf')
-    cey_b = float('Inf')
-    loss_best2 = float('Inf')
-    best_epch_loss = float('Inf')
-    best_test_loss = float('Inf')
+    kl_b = 1e10
+    lk_b = 1e10
+    ceya_b = 1e10
+    cey_b = 1e10
+    loss_best2 = 1e10
+    best_epch_loss = 1e10
+    best_test_loss = 1e10
     num_mb = np.ceil(params.N/params.mb_size)
     
     model = cnn_encoder_decoder(params, embedding_weights)
@@ -57,34 +57,26 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             # --------------------------------------------------------------------
 
             #  --------------------- Print and plot  -------------------------------------------------------------------
-            kl_epch += kl_loss.data
-            recon_epch += cross_entropy.data
-            cey_epch += cross_entropy_y.data
-            ceya_epch += cross_entropy_y_act.data
+            kl_epch += kl_loss.data[0]
+            recon_epch += cross_entropy.data[0]
+            cey_epch += cross_entropy_y.data[0]
+            ceya_epch += cross_entropy_y_act.data[0]
             
-            test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
-            
-            if(test_loss < best_test_loss):
-                print("This loss is better than the previous recored test loss:- {}".format(best_test_loss))
-                best_test_loss = test_loss
-                if not os.path.exists('saved_models/' + params.model_name ):
-                    os.makedirs('saved_models/' + params.model_name)
-                torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
             
             if i % int(num_mb/12) == 0:
                 print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
-                loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
+                loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, cross_entropy_y_act.data[0], ceya_b, loss_best2))
 
                 if not os.path.exists('saved_models/' + params.model_name ):
                     os.makedirs('saved_models/' + params.model_name)
                 torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_batch")
 
-                if(loss<loss_best2):
-                    loss_best2 = loss.data
-                    lk_b = cross_entropy.data
-                    kl_b = kl_loss.data
-                    cey_b = cross_entropy_y.data
-                    ceya_b = cross_entropy_y_act.data
+                if(loss.data[0]<loss_best2):
+                    loss_best2 = loss.data[0]
+                    lk_b = cross_entropy.data[0]
+                    kl_b = kl_loss.data[0]
+                    cey_b = cross_entropy_y.data[0]
+                    ceya_b = cross_entropy_y_act.data[0]
 
             # -------------------------------------------------------------------------------------------------------------- 
             
@@ -111,6 +103,14 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
 
         print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
 
+        test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
+        
+        if(test_loss < best_test_loss):
+            print("This loss is better than the previous recored test loss:- {}".format(best_test_loss))
+            best_test_loss = test_loss
+            if not os.path.exists('saved_models/' + params.model_name ):
+                os.makedirs('saved_models/' + params.model_name)
+            torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
         
         
         print("="*50)

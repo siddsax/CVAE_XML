@@ -30,7 +30,7 @@ class classifier(nn.Module):
         self.l1 = nn.Linear(params.H_dim, params.y_dim)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        torch.nn.init.xavier_uniform_(self.l1.weight)
+        torch.nn.init.xavier_uniform(self.l1.weight)
 
     def forward(self, H):
         H = self.drp(H)

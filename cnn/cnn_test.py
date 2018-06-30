@@ -88,7 +88,7 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         params.dtype_i = torch.LongTensor
 
 
-    params.mb_size = params.mb_size*5
+    # params.mb_size = params.mb_size*5
     if(x_tr is not None and y_tr is not None):
         # if(x_tr.shape[0] - rem):
         #     x_tr = x_tr[:-1,:]
@@ -108,19 +108,20 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         cross_entropy_y = log_loss(y_tr, Y)
         print('Train Loss; {:.4};'.format(cross_entropy_y))#, kl_loss.data, recon_loss.data))
     
+    
     y_te = y_te[:,:-1]
     x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
     Y2 = np.zeros(y_te.shape)
-    rem = x_tr.shape[0]%params.mb_size
+    rem = x_te.shape[0]%params.mb_size
     for i in range(0,x_te.shape[0] - rem,params.mb_size):
-        print(i)
+        # print(i)
         e_emb2 = model.embedding_layer.forward(x_te[i:i+params.mb_size].view(params.mb_size, x_te.shape[1]))
         H2 = model.encoder.forward(e_emb2)
         Y2[i:i+params.mb_size,:] = model.classifier(H2).data
-
-    e_emb2 = model.embedding_layer.forward(x_te[-rem:].view(rem, x_te.shape[1]))
-    H2 = model.encoder.forward(e_emb2)
-    Y2[-rem:,:] = model.classifier(H2).data
+    if(rem):
+        e_emb2 = model.embedding_layer.forward(x_te[-rem:].view(rem, x_te.shape[1]))
+        H2 = model.encoder.forward(e_emb2)
+        Y2[-rem:,:] = model.classifier(H2).data
 
     cross_entropy_y2 = log_loss(y_te, Y2) # Reverse of pytorch
     

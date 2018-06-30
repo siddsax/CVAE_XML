@@ -8,9 +8,9 @@ class variational(nn.Module):
         self.relu = nn.ReLU()
         self.mu = nn.Linear(params.h_dim, params.Z_dim)
         self.var = nn.Linear(params.h_dim, params.Z_dim)
-        torch.nn.init.xavier_uniform_(self.l1.weight)
-        torch.nn.init.xavier_uniform_(self.var.weight)
-        torch.nn.init.xavier_uniform_(self.mu.weight)
+        torch.nn.init.xavier_uniform(self.l1.weight)
+        torch.nn.init.xavier_uniform(self.var.weight)
+        torch.nn.init.xavier_uniform(self.mu.weight)
 
     def forward(self, H):
         H = self.l1(H)
