@@ -59,15 +59,6 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             cross_entropy_y_act = cross_entropy_y_act.mean().squeeze()
             # --------------------------------------------------------------------
 
-            # ###########################
-            batch_x, batch_y, _, _ = load_batch_cnn(x_20, y_20, params, batch_size=2)
-            e_emb = model.embedding_layer.forward(batch_x)
-            H = model.encoder.forward(e_emb)
-            Y = model.classifier(H)
-            cross_entropy_y = model.params.loss_fn(Y, batch_y)
-            loss = loss + cross_entropy_y
-            # ###########################
-
             #  --------------------- Print and plot  -------------------------------------------------------------------
             kl_epch += kl_loss.data
             recon_epch += cross_entropy.data
@@ -98,10 +89,6 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             optimizer.step()
             optimizer.zero_grad()
 
-            # ----------------------------------------------------------------------------
-            # if(epoch==0):
-            #     break
-        
         # for i in range(int(num_mb_2)):
 
             # ----------------------------------------------------------------------------
