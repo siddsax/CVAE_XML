@@ -49,26 +49,27 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             # ------------------ Load Batch Data ---------------------------------------------------------
             batch_x, batch_y, decoder_word_input, decoder_target = load_batch_cnn(x_tr, y_tr, params)
             # -----------------------------------------------------------------------------------
-            loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
-            # loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            # loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
 
-            loss = loss.mean().squeeze()
-            kl_loss = kl_loss.mean().squeeze()
-            cross_entropy = cross_entropy.mean().squeeze()
-            cross_entropy_y = cross_entropy_y.mean().squeeze()
-            cross_entropy_y_act = cross_entropy_y_act.mean().squeeze()
+            # loss = loss.mean().squeeze()
+            # kl_loss = kl_loss.mean().squeeze()
+            # cross_entropy = cross_entropy.mean().squeeze()
+            # cross_entropy_y = cross_entropy_y.mean().squeeze()
+            # cross_entropy_y_act = cross_entropy_y_act.mean().squeeze()
             # --------------------------------------------------------------------
 
             #  --------------------- Print and plot  -------------------------------------------------------------------
-            kl_epch += kl_loss.data
-            recon_epch += cross_entropy.data
-            cey_epch += cross_entropy_y.data
-            ceya_epch += cross_entropy_y_act.data
+            # kl_epch += kl_loss.data
+            # recon_epch += cross_entropy.data
+            # cey_epch += cross_entropy_y.data
+            cey_epch += loss.data
+            # ceya_epch += cross_entropy_y_act.data
             
             # print(num_mb)
             if i % int(num_mb/12) == 0:
-                print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
-                loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
+                # print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
+                # loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
 
                 if not os.path.exists('saved_models/' + params.model_name ):
                     os.makedirs('saved_models/' + params.model_name)
@@ -76,10 +77,10 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
 
                 if(loss<loss_best2):
                     loss_best2 = loss.data
-                    lk_b = cross_entropy.data
-                    kl_b = kl_loss.data
-                    cey_b = cross_entropy_y.data
-                    ceya_b = cross_entropy_y_act.data
+                    # lk_b = cross_entropy.data
+                    # kl_b = kl_loss.data
+                    # cey_b = cross_entropy_y.data
+                    # ceya_b = cross_entropy_y_act.data
 
             # -------------------------------------------------------------------------------------------------------------- 
             
@@ -96,11 +97,12 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
                 break
 
 
-        kl_epch/= num_mb
-        recon_epch/= num_mb
+        # kl_epch/= num_mb
+        # recon_epch/= num_mb
         cey_epch /= num_mb
-        ceya_epch /= num_mb
-        loss_epch = kl_epch + recon_epch + cey_epch + ceya_epch
+        # ceya_epch /= num_mb
+        # loss_epch = kl_epch + recon_epch + cey_epch + ceya_epch
+        loss_epch = cey_epch
         
         if(loss_epch<best_epch_loss):
             best_epch_loss = loss_epch
