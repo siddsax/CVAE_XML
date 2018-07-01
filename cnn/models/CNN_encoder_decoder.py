@@ -47,6 +47,7 @@ class cnn_encoder_decoder(nn.Module):
             print(batch_y[0:100])
             sys.exit()
         # loss = cross_entropy + kl_loss + cross_entropy_y + cross_entropy_y_act
-        loss = cross_entropy + kl_loss + cross_entropy_y_act
+        # loss = cross_entropy + kl_loss + cross_entropy_y_act
+        loss = cross_entropy + kl_loss
         return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1), cross_entropy_y_act.view(-1,1)
         # return cross_entropy_y.view(-1,1)
