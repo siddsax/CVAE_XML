@@ -55,7 +55,8 @@ if(params.load_data==0):
     params.data_path = '../datasets/rcv/rcv'# + params.data_set
 else:
     params.data_path = '../datasets/rcv/rcv.p'# + params.data_set
-x_tr, x_te, y_tr, y_te, params.vocabulary, params.vocabulary_inv, params = save_load_data(params, save=params.load_data)
+x_tr, x_te, y_tr, y_te, x_20, y_20, params.vocabulary, params.vocabulary_inv, params = save_load_data(params, save=params.load_data)
+
 params = update_params(params)
 # -----------------------  Loss ------------------------------------
 params.loss_fn = getattr(loss(), params.loss_type)
@@ -70,8 +71,9 @@ if torch.cuda.is_available():
 else:
     params.dtype = torch.FloatTensor
 
+
 if(params.training):
-    train(x_tr, y_tr, x_te, y_te, embedding_weights, params)
+    train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params)
 
 else:
     test_class(x_te, y_te, params, x_tr=x_tr, y_tr=y_tr, embedding_weights=embedding_weights)
