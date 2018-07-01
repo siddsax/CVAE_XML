@@ -9,7 +9,7 @@ parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do
 parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=20, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
-parser.add_argument('--Hd', dest='H_dim', type=int, default=900, help='hidden layer dimension')
+parser.add_argument('--Hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=100, help='step for displaying loss')
@@ -39,6 +39,7 @@ parser.add_argument('--pooling_units', help='number of pooling units in 1D pooli
 parser.add_argument('--pooling_type', help='max or average', type=str, default='max')
 parser.add_argument('--model_type', help='glove or GoogleNews', type=str, default='glove')
 parser.add_argument('--num_features', help='50, 100, 200, 300', type=int, default=300)
+parser.add_argument('--dropouts', help='0 for not using, 1 for using', type=int, default=0)
 
 
 params = parser.parse_args()

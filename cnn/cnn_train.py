@@ -12,6 +12,7 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
     loss_best2 = float('Inf')
     best_epch_loss = float('Inf')
     best_test_loss = float('Inf')
+    best_test_acc = 0
     num_mb = np.ceil(params.N/params.mb_size)
     
     model = cnn_encoder_decoder(params, embedding_weights)
@@ -47,36 +48,37 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             # ------------------ Load Batch Data ---------------------------------------------------------
             batch_x, batch_y, decoder_word_input, decoder_target = load_batch_cnn(x_tr, y_tr, params)
             # -----------------------------------------------------------------------------------
-            loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            # loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
 
             loss = loss.mean().squeeze()
-            kl_loss = kl_loss.mean().squeeze()
-            cross_entropy = cross_entropy.mean().squeeze()
-            cross_entropy_y = cross_entropy_y.mean().squeeze()
-            cross_entropy_y_act = cross_entropy_y_act.mean().squeeze()
+            # kl_loss = kl_loss.mean().squeeze()
+            # cross_entropy = cross_entropy.mean().squeeze()
+            # cross_entropy_y = cross_entropy_y.mean().squeeze()
+            # cross_entropy_y_act = cross_entropy_y_act.mean().squeeze()
             # --------------------------------------------------------------------
 
             #  --------------------- Print and plot  -------------------------------------------------------------------
-            kl_epch += kl_loss.data
-            recon_epch += cross_entropy.data
-            cey_epch += cross_entropy_y.data
-            ceya_epch += cross_entropy_y_act.data
+            # kl_epch += kl_loss.data
+            # recon_epch += cross_entropy.data
+            # cey_epch += cross_entropy_y.data
+            # ceya_epch += cross_entropy_y_act.data
             
             
-            if i % int(num_mb/12) == 0:
-                print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
-                loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
+            # if i % int(num_mb/12) == 0:
+            #     print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
+            #     loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
 
-                if not os.path.exists('saved_models/' + params.model_name ):
-                    os.makedirs('saved_models/' + params.model_name)
-                torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_batch")
+            #     if not os.path.exists('saved_models/' + params.model_name ):
+            #         os.makedirs('saved_models/' + params.model_name)
+            #     torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_batch")
 
-                if(loss<loss_best2):
-                    loss_best2 = loss.data
-                    lk_b = cross_entropy.data
-                    kl_b = kl_loss.data
-                    cey_b = cross_entropy_y.data
-                    ceya_b = cross_entropy_y_act.data
+            #     if(loss<loss_best2):
+            #         loss_best2 = loss.data
+            #         lk_b = cross_entropy.data
+            #         kl_b = kl_loss.data
+            #         cey_b = cross_entropy_y.data
+            #         ceya_b = cross_entropy_y_act.data
 
             # -------------------------------------------------------------------------------------------------------------- 
             
@@ -89,25 +91,26 @@ def train(x_tr, y_tr, x_te, y_te, embedding_weights, params):
             if(epoch==0):
                 break
 
-        kl_epch/= num_mb
-        recon_epch/= num_mb
-        cey_epch /= num_mb
-        ceya_epch /= num_mb
-        loss_epch = kl_epch + recon_epch + cey_epch + ceya_epch
+        # kl_epch/= num_mb
+        # recon_epch/= num_mb
+        # cey_epch /= num_mb
+        # ceya_epch /= num_mb
+        # loss_epch = kl_epch + recon_epch + cey_epch + ceya_epch
         
-        if(loss_epch<best_epch_loss):
-            best_epch_loss = loss_epch
-            if not os.path.exists('saved_models/' + params.model_name ):
-                os.makedirs('saved_models/' + params.model_name)
-            torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
+        # if(loss_epch<best_epch_loss):
+        #     best_epch_loss = loss_epch
+        #     if not os.path.exists('saved_models/' + params.model_name ):
+        #         os.makedirs('saved_models/' + params.model_name)
+        #     torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
 
-        print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
+        # print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
 
-        test_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
+        test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
         
-        if(test_loss < best_test_loss):
-            print("This loss is better than the previous recored test loss:- {}".format(best_test_loss))
-            best_test_loss = test_loss
+        if(test_prec_acc > best_test_acc):
+            best_test_loss = test_ce_loss
+            best_test_acc = test_prec_acc
+            print("This acc is better than the previous recored test acc:- {} ; while CELoss:- {}".format(best_test_acc, best_test_loss))
             if not os.path.exists('saved_models/' + params.model_name ):
                 os.makedirs('saved_models/' + params.model_name)
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")

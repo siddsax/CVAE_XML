@@ -37,6 +37,7 @@ class cnn_decoder(nn.Module):
             x_width = x.size()[2]
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
             x = self.relu(x)
+            x = self.bn_x[layer](x)
         x = x.transpose(1, 2).contiguous()
         if(self.params.multi_gpu):
             x = x.cuda(2)

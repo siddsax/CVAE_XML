@@ -29,3 +29,4 @@ from futils import *
 from loss import loss
 from CNN_encoder_decoder import cnn_encoder_decoder
 import timeit
+from precision_k import precision_k
