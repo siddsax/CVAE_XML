@@ -111,7 +111,7 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
     Y2 = np.zeros(y_te.shape)
     rem = x_te.shape[0]%params.mb_size
     for i in range(0,x_te.shape[0] - rem,params.mb_size):
-        # print(i)
+        print(i)
         e_emb2 = model.embedding_layer.forward(x_te[i:i+params.mb_size].view(params.mb_size, x_te.shape[1]))
         H2 = model.encoder.forward(e_emb2)
         Y2[i:i+params.mb_size,:] = model.classifier(H2).data

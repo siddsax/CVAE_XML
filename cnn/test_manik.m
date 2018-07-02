@@ -1,7 +1,7 @@
-addpath('/scratch/work/saxenas2/fastxml/manik/Tools/matlab/')
-addpath('/scratch/work/saxenas2/fastxml/manik/tools/')
-addpath('/scratch/work/saxenas2/fastxml/manik/Tools/metrics/')
-addpath('/scratch/work/saxenas2/fastxml/manik/FastXML/')
+addpath('/homeappl/home/saxenasi/fastxml/manik/Tools/matlab/')
+addpath('/homeappl/home/saxenasi/fastxml/manik/tools/')
+addpath('/homeappl/home/saxenasi/fastxml/manik/Tools/metrics/')
+addpath('/homeappl/home/saxenasi/fastxml/manik/FastXML/')
 
 A = .55;
 B = 1.5;
