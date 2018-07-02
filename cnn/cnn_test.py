@@ -126,7 +126,7 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
     cross_entropy_y2 = log_loss(y_te, Y2) # Reverse of pytorch
     # print('Test Loss; {:.4};'.format(cross_entropy_y2))#, kl_loss.data, recon_loss.data))
     prec_1 = precision_k(y_te, Y2, 1)[0] # Reverse of pytorch
-    print('Test Loss; {};'.format(prec_1))#, kl_loss.data, recon_loss.data))
+    print('Test Loss; {}; CELoss: {}'.format(prec_1, cross_entropy_y2))#, kl_loss.data, recon_loss.data))
     if(save):
         Y_probabs2 = sparse.csr_matrix(Y2)
         sio.savemat('score_matrix.mat' , {'score_matrix': Y_probabs2})

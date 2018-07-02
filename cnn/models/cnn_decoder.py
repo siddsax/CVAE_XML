@@ -7,7 +7,9 @@ class cnn_decoder(nn.Module):
         self.out_size = self.params.decoder_kernels[-1][0]
         
         self.bn_1 = nn.BatchNorm1d(self.params.sequence_length + 1)
-        self.drp = nn.Dropout(p=params.drop_prob)
+        if(params.dropouts):
+            self.drp = nn.Dropout(p=.25)
+            self.drp_7 = nn.Dropout(p=.7)
         self.conv_layers = nn.ModuleList()
         self.bn_x = nn.ModuleList()
         self.relu = nn.ReLU()
@@ -31,13 +33,16 @@ class cnn_decoder(nn.Module):
         z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim + self.params.classes)
         x = torch.cat([decoder_input, z], 2)
         x = x.transpose(1, 2).contiguous()
-        x = self.drp(x)
+        # if(self.params.dropouts):
+        #     x = self.drp(x)
         for layer in range(len(self.params.decoder_kernels)):
             x = self.conv_layers[layer](x)
             x_width = x.size()[2]
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
             x = self.relu(x)
-            x = self.bn_x[layer](x)
+            # x = self.bn_x[layer](x)
+            # if(self.params.dropouts):
+            #     x = self.drp_7(x)
         
         x = x.transpose(1, 2).contiguous()
         if(self.params.multi_gpu):

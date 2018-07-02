@@ -40,6 +40,7 @@ parser.add_argument('--pooling_type', help='max or average', type=str, default='
 parser.add_argument('--model_type', help='glove or GoogleNews', type=str, default='glove')
 parser.add_argument('--num_features', help='50, 100, 200, 300', type=int, default=300)
 parser.add_argument('--dropouts', help='0 for not using, 1 for using', type=int, default=0)
+parser.add_argument('--clip', help='gradient clipping', type=float, default=5)
 
 params = parser.parse_args()
 

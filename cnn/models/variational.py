@@ -18,8 +18,8 @@ class variational(nn.Module):
     def forward(self, H):
         H = self.l1(H)
         H = self.relu(H)
-        H = self.bn_1(H)
-        if(self.params.dropouts):
-            H = self.drp(H)
+        # H = self.bn_1(H)
+        # if(self.params.dropouts):
+        #     H = self.drp(H)
 
         return self.mu(H), self.var(H)
