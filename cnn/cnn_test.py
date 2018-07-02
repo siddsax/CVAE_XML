@@ -87,7 +87,7 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         params.dtype_f = torch.FloatTensor
         params.dtype_i = torch.LongTensor
 
-
+    model.eval()
     params.mb_size = params.mb_size*5
     if(x_tr is not None and y_tr is not None):
         x_tr, _, _, _ = load_batch_cnn(x_tr, y_tr, params, batch=False)
@@ -97,13 +97,16 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         H = model.encoder.forward(e_emb)
         Y[-rem:, :] = model.classifier(H).data
         for i in range(0, x_tr.shape[0] - rem, params.mb_size ):
-            print(i)
+            # print(i)
             e_emb = model.embedding_layer.forward(x_tr[i:i+params.mb_size].view(params.mb_size, x_te.shape[1]))
             H = model.encoder.forward(e_emb)
             Y[i:i+params.mb_size,:] = model.classifier(H).data
     
         cross_entropy_y = log_loss(y_tr, Y)
         print('Train Loss; {:.4};'.format(cross_entropy_y))#, kl_loss.data, recon_loss.data))
+        prec_1 = precision_k(y_tr, Y, 1)
+        print('Train Loss; {};'.format(prec_1[0]))#, kl_loss.data, recon_loss.data))
+
     
     
     y_te = y_te[:,:-1]
@@ -111,7 +114,7 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
     Y2 = np.zeros(y_te.shape)
     rem = x_te.shape[0]%params.mb_size
     for i in range(0,x_te.shape[0] - rem,params.mb_size):
-        print(i)
+        # print(i)
         e_emb2 = model.embedding_layer.forward(x_te[i:i+params.mb_size].view(params.mb_size, x_te.shape[1]))
         H2 = model.encoder.forward(e_emb2)
         Y2[i:i+params.mb_size,:] = model.classifier(H2).data
@@ -121,10 +124,11 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         Y2[-rem:,:] = model.classifier(H2).data
 
     cross_entropy_y2 = log_loss(y_te, Y2) # Reverse of pytorch
-    
-    print('Test Loss; {:.4};'.format(cross_entropy_y2))#, kl_loss.data, recon_loss.data))
+    # print('Test Loss; {:.4};'.format(cross_entropy_y2))#, kl_loss.data, recon_loss.data))
+    prec_1 = precision_k(y_te, Y2, 1)[0] # Reverse of pytorch
+    print('Test Loss; {};'.format(prec_1))#, kl_loss.data, recon_loss.data))
     if(save):
         Y_probabs2 = sparse.csr_matrix(Y2)
         sio.savemat('score_matrix.mat' , {'score_matrix': Y_probabs2})
     params.mb_size = params.mb_size/5
-    return cross_entropy_y2
+    return prec_1, cross_entropy_y2

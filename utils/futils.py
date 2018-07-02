@@ -120,6 +120,12 @@ def save_load_data(params, save=0):
     y_tr = sparse.load_npz(params.data_path + '/y_train.npz').todense()
     x_te = np.load(params.data_path + '/x_test.npy')
     y_te = sparse.load_npz(params.data_path + '/y_test.npz').todense()
+
+    x_20 = np.load('../datasets/rcv/rcv/x_1.npy')
+    y_20 = np.load('../datasets/rcv/rcv/y_1.npy')
+
+    # x_tr = x_20
+    # y_tr = y_20
     vocabulary = np.load(params.data_path + '/vocab.npy').item()
     vocabulary_inv = np.load(params.data_path + '/vocab_inv.npy')
     params.X_dim = x_tr.shape[1]
@@ -128,15 +134,21 @@ def save_load_data(params, save=0):
     params.vocab_size = len(vocabulary)
     params.classes = y_tr.shape[1]
 
-    return x_tr, x_te, y_tr, y_te, vocabulary, vocabulary_inv, params
+    return x_tr, x_te, y_tr, y_te, x_20, y_20, vocabulary, vocabulary_inv, params
 
-def load_batch_cnn(x_tr, y_tr, params, batch=True):
+def load_batch_cnn(x_tr, y_tr, params, batch=True, batch_size=0):
 
     if(batch):
-        params.go_row = np.ones((params.mb_size,1))*params.vocabulary[params.go_token]
-        params.end_row = np.ones((params.mb_size,1))*params.vocabulary[params.end_token]
-        indexes = np.array(np.random.randint(params.N, size=params.mb_size))
-        x_tr, y_tr = x_tr[indexes,:], y_tr[indexes,:]
+        if(batch_size):
+            params.go_row = np.ones((batch_size,1))*params.vocabulary[params.go_token]
+            params.end_row = np.ones((batch_size,1))*params.vocabulary[params.end_token]
+            indexes = np.array(np.random.randint(x_tr.shape[0], size=batch_size))
+            x_tr, y_tr = x_tr[indexes,:], y_tr[indexes,:]
+        else:
+            params.go_row = np.ones((params.mb_size,1))*params.vocabulary[params.go_token]
+            params.end_row = np.ones((params.mb_size,1))*params.vocabulary[params.end_token]
+            indexes = np.array(np.random.randint(x_tr.shape[0], size=params.mb_size))
+            x_tr, y_tr = x_tr[indexes,:], y_tr[indexes,:]
     else:
         params.go_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.go_token]
         params.end_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.end_token]
