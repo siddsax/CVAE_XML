@@ -62,7 +62,7 @@ def test_gen(x_te, y_te, params, model=None, embedding_weights=None):
     #         if torch.cuda.is_available():
     #             decoder_word_input = decoder_word_input.cuda()
 
-def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_weights=None, verbose=True, save=True ):
+def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_weights=None, verbose=True, save=True):#, decoder_word_input=None, decoder_target=None ):
 
     
     if(model==None):
@@ -90,7 +90,8 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
     model.eval()
     params.mb_size = params.mb_size*5
     if(x_tr is not None and y_tr is not None):
-        x_tr, _, _, _ = load_batch_cnn(x_tr, y_tr, params, batch=False)
+        if(params.dataset_gpu == 0):
+            x_tr, _, _, _ = load_batch_cnn(x_tr, y_tr, params, batch=False)
         Y = np.zeros(y_tr.shape)
         rem = x_tr.shape[0]%params.mb_size
         e_emb = model.embedding_layer.forward(x_tr[-rem:].view(rem, x_te.shape[1]))
@@ -109,8 +110,9 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
 
     
     
-    y_te = y_te[:,:-1]
-    x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
+    # x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
+    if(params.dataset_gpu == 0):
+        x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
     Y2 = np.zeros(y_te.shape)
     rem = x_te.shape[0]%params.mb_size
     for i in range(0,x_te.shape[0] - rem,params.mb_size):

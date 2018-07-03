@@ -17,7 +17,7 @@ class cnn_encoder(torch.nn.Module):
         
         self.bn_1 = nn.BatchNorm1d(params.embedding_dim)
         if(params.dropouts):
-            self.drp = nn.Dropout(p=.10)
+            self.drp = nn.Dropout(p=.25)
             self.drp_7 = nn.Dropout(p=.7)
 
         for fsz in params.filter_sizes:
@@ -36,7 +36,6 @@ class cnn_encoder(torch.nn.Module):
             self.conv_layers.append(l_conv)
             self.bn_x.append(bn_x)
             self.pool_layers.append(l_pool)
-
         self.fin_layer = nn.Linear(fin_l_out_size, params.H_dim, bias=False)
         self.bn_2 = nn.BatchNorm1d(params.H_dim)
         torch.nn.init.xavier_uniform(self.fin_layer.weight)
@@ -58,7 +57,7 @@ class cnn_encoder(torch.nn.Module):
             o = o.view(o.shape[0],-1)
             # if(self.params.dropouts):
             #     o = self.drp_7(o)
-            # o = self.bn_x[i](o)
+            o = self.bn_x[i](o)
             conv_out.append(o)
             del o
         del o0

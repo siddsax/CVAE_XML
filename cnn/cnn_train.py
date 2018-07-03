@@ -3,7 +3,7 @@ from cnn_test import *
 
 # ---------------------------------------------------------------------------------
 
-def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
+def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder_word_input=None, decoder_target=None, decoder_word_input_t=None, decoder_target_t=None):
     viz = Visdom()
     kl_b = 1e10
     lk_b = 1e10
@@ -12,6 +12,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
     loss_best2 = 1e10
     best_epch_loss = 1e10
     best_test_loss = 1e10
+    avg_grad = 1e10
+    max_grad = 0
     best_test_acc = 0
 
     num_mb = np.ceil(params.N/params.mb_size)
@@ -49,10 +51,13 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
 
         for i in range(int(num_mb)):
             # ------------------ Load Batch Data ---------------------------------------------------------
-            batch_x, batch_y, decoder_word_input, decoder_target = load_batch_cnn(x_tr, y_tr, params)
+            if(params.dataset_gpu):
+                batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(x_tr, y_tr, params, decoder_word_input=decoder_word_input, decoder_target=decoder_target)
+            else:
+                batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(x_tr, y_tr, params)
             # -----------------------------------------------------------------------------------
             # loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
-            loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input_b, decoder_target_b)
 
             loss = loss.mean().squeeze()
             kl_loss = kl_loss.mean().squeeze()
@@ -72,14 +77,18 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             
             
             if i % int(num_mb/12) == 0:
-                print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
-                loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, cross_entropy_y_act.data[0], ceya_b, loss_best2))
+                print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}'.format(i, \
+                loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, cross_entropy_y_act.data[0], ceya_b, loss_best2, max_grad))
 
                 if not os.path.exists('saved_models/' + params.model_name ):
                     os.makedirs('saved_models/' + params.model_name)
                 torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_batch")
 
+                # if(params.dataset_gpu):
+                #     test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False, decoder_word_input=decoder_word_input_t, decoder_target=decoder_target_t)
+                # else:
                 test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
+
                 model.train()
                 if(test_prec_acc > best_test_acc):
                     best_test_loss = test_ce_loss
@@ -106,7 +115,16 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             loss.backward()
             loss = loss.data[0]
             optimizer.step()
-            # torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+            sm = 0
+            sm2 = 0
+            max_grad = 0
+            for p in model.parameters():
+                if(p.grad is not None):
+                    max_grad = max(torch.max(p.grad).data[0], max_grad)
+                    sm+= p.grad.view(-1).shape[0]
+                    sm2 = p.grad.mean().squeeze()*p.grad.view(-1).shape[0]
+            avg_grad = (sm2/sm).data[0]
+            torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
             # for p in model.parameters():
             #     if(p.grad is not None):
             #         p.data.add_(-params.lr, p.grad.data)
