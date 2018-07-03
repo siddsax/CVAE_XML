@@ -111,16 +111,18 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
     
     
     # x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
-    if(params.dataset_gpu == 0):
-        x_te, _, _, _ = load_batch_cnn(x_te, y_te, params, batch=False)
     Y2 = np.zeros(y_te.shape)
     rem = x_te.shape[0]%params.mb_size
     for i in range(0,x_te.shape[0] - rem,params.mb_size):
         # print(i)
-        e_emb2 = model.embedding_layer.forward(x_te[i:i+params.mb_size].view(params.mb_size, x_te.shape[1]))
+        if(params.dataset_gpu == 0):
+            x_te, _, _, _ = load_batch_cnn(x_te[i:i+params.mb_size], y_te[i:i+params.mb_size], params, batch=False)
+        e_emb2 = model.embedding_layer.forward(x_te.view(params.mb_size, x_te.shape[1]))
         H2 = model.encoder.forward(e_emb2)
         Y2[i:i+params.mb_size,:] = model.classifier(H2).data
     if(rem):
+        if(params.dataset_gpu == 0):
+            x_te, _, _, _ = load_batch_cnn(x_te[-rem:], y_te[-rem:], params, batch=False)
         e_emb2 = model.embedding_layer.forward(x_te[-rem:].view(rem, x_te.shape[1]))
         H2 = model.encoder.forward(e_emb2)
         Y2[-rem:,:] = model.classifier(H2).data

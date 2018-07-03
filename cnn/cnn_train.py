@@ -80,6 +80,9 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
                 print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}'.format(i, \
                 loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, cross_entropy_y_act.data[0], ceya_b, loss_best2, max_grad))
 
+                # print('Iter-{}; Loss: {:.4}; best_loss: {:.4}; max_grad: {}'.format(i, \
+                # loss.data[0], loss_best2, max_grad))
+
                 if not os.path.exists('saved_models/' + params.model_name ):
                     os.makedirs('saved_models/' + params.model_name)
                 torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_batch")
@@ -87,6 +90,7 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
                 # if(params.dataset_gpu):
                 #     test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False, decoder_word_input=decoder_word_input_t, decoder_target=decoder_target_t)
                 # else:
+                print("1"*10)
                 test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
 
                 model.train()
@@ -98,8 +102,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
                         os.makedirs('saved_models/' + params.model_name)
                     torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
                 
-                # if(loss.data[0]<loss_best2):
-                #     loss_best2 = loss.data[0]
+                if(loss.data[0]<loss_best2):
+                    loss_best2 = loss.data[0]
                 
                 #####################
                 if(loss.data[0]<loss_best2):
@@ -112,9 +116,9 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
             # -------------------------------------------------------------------------------------------------------------- 
             
             # ------------------------ Propogate loss -----------------------------------
+            print("2"*10)
             loss.backward()
             loss = loss.data[0]
-            optimizer.step()
             sm = 0
             sm2 = 0
             max_grad = 0
@@ -124,10 +128,11 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
                     sm+= p.grad.view(-1).shape[0]
                     sm2 = p.grad.mean().squeeze()*p.grad.view(-1).shape[0]
             avg_grad = (sm2/sm).data[0]
+            # optimizer.step()
             torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
-            # for p in model.parameters():
-            #     if(p.grad is not None):
-            #         p.data.add_(-params.lr, p.grad.data)
+            for p in model.parameters():
+                if(p.grad is not None):
+                    p.data.add_(-params.lr, p.grad.data)
             optimizer.zero_grad()
             # ----------------------------------------------------------------------------
             if(params.disp_flg):
