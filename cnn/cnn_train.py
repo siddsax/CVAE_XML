@@ -13,9 +13,13 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
     loss_best2 = float('Inf')
     best_epch_loss = float('Inf')
     best_test_loss = float('Inf')
+    avg_grad = 1e10
+    max_grad = 0
     best_test_acc = 0
+
     num_mb = np.ceil(params.N/params.mb_size)
     num_mb_2 = np.ceil(x_20.shape[0]/params.mb_size)
+    
     model = cnn_encoder_decoder(params, embedding_weights)
     if(torch.cuda.is_available()):
         print("--------------- Using GPU! ---------")
@@ -38,6 +42,7 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
     print('Boom 5')
+    iteration = 0
     # =============================== TRAINING ====================================
     for epoch in range(params.num_epochs):
         kl_epch = 0.0
@@ -47,10 +52,13 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
 
         for i in range(int(num_mb)):
             # ------------------ Load Batch Data ---------------------------------------------------------
-            batch_x, batch_y, decoder_word_input, decoder_target = load_batch_cnn(x_tr, y_tr, params)
+            if(params.dataset_gpu):
+                batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(x_tr, y_tr, params, decoder_word_input=decoder_word_input, decoder_target=decoder_target)
+            else:
+                batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(x_tr, y_tr, params)
             # -----------------------------------------------------------------------------------
-            loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
             # loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
+            loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(batch_x, batch_y, decoder_word_input_b, decoder_target_b)
 
             loss = loss.mean().squeeze()
             kl_loss = kl_loss.mean().squeeze()
@@ -74,15 +82,15 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             cey_epch += cross_entropy_y.data
             ceya_epch += cross_entropy_y_act.data
             
-            # print(num_mb)
             if i % int(num_mb/12) == 0:
-                print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4};'.format(i, \
-                loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2))
+                print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); cross_entropy_y_act: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}'.format(i, \
+                loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, cross_entropy_y_act.data, ceya_b, loss_best2, max_grad))
 
                 if not os.path.exists('saved_models/' + params.model_name ):
                     os.makedirs('saved_models/' + params.model_name)
                 torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_batch")
 
+		
                 if(loss<loss_best2):
                     loss_best2 = loss.data
                     lk_b = cross_entropy.data
@@ -94,17 +102,27 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             
             # ------------------------ Propogate loss -----------------------------------
             loss.backward()
-            del loss
-            optimizer.step()
+            loss = loss.data
+            #optimizer.step()
+            torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+            for p in model.parameters():
+                if(p.grad is not None):
+                    p.data.add_(-params.lr, p.grad.data)
             optimizer.zero_grad()
-
             # ----------------------------------------------------------------------------
-            # if(epoch==0):
-            #     break
-        
-        # for i in range(int(num_mb_2)):
+            if(params.disp_flg):
+                if(iteration==0):
+                    loss_old = loss
+                    # loss_old_t = test_loss
+                else:
+                    viz.line(X=np.linspace(iteration-1,iteration,50), Y=np.linspace(loss_old, loss,50), update='append', win=win)
+                    # viz.line(X=np.linspace(iteration-1,iteration,50), Y=np.linspace(loss_old_t, test_loss,50), name='2', update='append', win=win)
+                    loss_old = loss
+                    # loss_old_t = test_loss
+                if(iteration % 100 == 0 ):
+                    win = viz.line(X=np.arange(iteration, iteration + .1), Y=np.arange(0, .1))
+            iteration +=1
 
-            # ----------------------------------------------------------------------------
             if(epoch==0):
                 break
 
@@ -122,7 +140,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
 
         print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
-
+	
+	model.train()
         test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
         
         if(test_prec_acc > best_test_acc):
