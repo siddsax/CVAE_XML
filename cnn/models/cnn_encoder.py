@@ -47,8 +47,8 @@ class cnn_encoder(torch.nn.Module):
     def forward(self, inputs):
         # o0 = self.drp(self.bn_1(inputs)).permute(0,2,1)
         o0 = inputs.permute(0,2,1)# self.bn_1(inputs.permute(0,2,1))
-        if(self.params.dropouts):
-            o0 = self.drp(o0) 
+        # if(self.params.dropouts):
+        #     o0 = self.drp(o0) 
         conv_out = []
 
         for i in range(len(self.params.filter_sizes)):

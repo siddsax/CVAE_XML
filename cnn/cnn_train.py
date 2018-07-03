@@ -64,6 +64,15 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
                 if(loss<loss_best2):
                     loss_best2 = loss.data
 
+                test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
+                model.train()
+                if(test_prec_acc > best_test_acc):
+                    best_test_loss = test_ce_loss
+                    best_test_acc = test_prec_acc
+                    print("This acc is better than the previous recored test acc:- {} ; while CELoss:- {}".format(best_test_acc, best_test_loss))
+                    if not os.path.exists('saved_models/' + params.model_name ):
+                        os.makedirs('saved_models/' + params.model_name)
+                    torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
             # -------------------------------------------------------------------------------------------------------------- 
             
             # ------------------------ Propogate loss -----------------------------------
@@ -93,15 +102,7 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
 
 
-        test_prec_acc, test_ce_loss = test_class(x_te, y_te, params, model=model, verbose=False, save=False)
         
-        if(test_prec_acc > best_test_acc):
-            best_test_loss = test_ce_loss
-            best_test_acc = test_prec_acc
-            print("This acc is better than the previous recored test acc:- {} ; while CELoss:- {}".format(best_test_acc, best_test_loss))
-            if not os.path.exists('saved_models/' + params.model_name ):
-                os.makedirs('saved_models/' + params.model_name)
-            torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best_for_test")
         
         
         print("="*50)
