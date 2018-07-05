@@ -30,7 +30,7 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 		print("=============== Using CPU =========")
 
 	print(model); print("%"*100)
-	# model = nn.DataParallel(model)
+	print("Num Parameters : Encoder {} Decoder {}".format(count_parameters(model.encoder), count_parameters(model.classifier)))
 	
 	if(len(params.load_model)):
 		print(params.load_model)

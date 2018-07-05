@@ -1,4 +1,5 @@
 from header import *
+from weights_init import weights_init
 
 def out_size(l_in, kernel_size, padding=0, dilation=1, stride=1):
     a = l_in + 2*padding - dilation*(kernel_size - 1) - 1
