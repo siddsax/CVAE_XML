@@ -4,6 +4,8 @@ from cnn_encoder import cnn_encoder
 from classifier import classifier
 from variational import variational
 from precision_k import precision_k
+from weights_init import weights_init
+
 class cnn_encoder_decoder(nn.Module):
     def __init__(self, params, embedding_weights):
         super(cnn_encoder_decoder, self).__init__()
@@ -37,12 +39,12 @@ class cnn_encoder_decoder(nn.Module):
         X_sample = X_sample.view(-1, self.params.vocab_size)
         cross_entropy_y_act = torch.nn.functional.cross_entropy(X_sample, decoder_target)
         
-        if(cross_entropy<0):
+        if(cross_entropy.data[0]<0):
             print(cross_entropy)
             print(X_sample[0:100])
             print(batch_x[0:100])
             sys.exit()
-        if(cross_entropy_y<0):
+        if(cross_entropy_y.data[0]<0):
             print(cross_entropy)
             print(Y[0:100])
             print(batch_y[0:100])

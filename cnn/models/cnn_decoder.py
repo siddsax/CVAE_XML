@@ -1,4 +1,5 @@
 from header import *
+from weights_init import weights_init
 
 class cnn_decoder(nn.Module):
     def __init__(self, params):
@@ -18,14 +19,14 @@ class cnn_decoder(nn.Module):
             layer = nn.Conv1d(in_chan, out_chan, width,
                          dilation=self.params.decoder_dilations[layer],
                          padding=self.params.decoder_paddings[layer])
-            torch.nn.init.xavier_uniform_(layer.weight)
+            weights_init(layer.weight)
             bn_layer = nn.BatchNorm1d(out_chan)
             self.conv_layers.append(layer)
             self.bn_x.append(bn_layer)
         
         # self.bn_2 = nn.BatchNorm1d(self.out_size)
         self.fc = nn.Linear(self.out_size, self.params.vocab_size)
-        torch.nn.init.xavier_uniform_(self.fc.weight)
+        weights_init(self.fc.weight)
         
     def forward(self, decoder_input, z, batch_y):
         [batch_size, seq_len, embed_size] = decoder_input.size()

@@ -29,12 +29,13 @@ class loss:
         # y_pred_2 = torch.log(1 - y_pred + eps)
         # t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
         t = torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
-        if(torch.isnan(t).any()):
-            print("nan")
-            pdb.set_trace()
-        if(t<0):
-            print("negative")            
-            pdb.set_trace()
+        if(torch.__version__=='.0.4.0'):
+		if(torch.isnan(t).any()):
+            		print("nan")
+           		pdb.set_trace()
+        	if(t<0):
+            		print("negative")            
+           		pdb.set_trace()
         return t
     
     def L1Loss(self, X_sample, X):

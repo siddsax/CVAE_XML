@@ -24,3 +24,4 @@ from visdom import Visdom
 from sklearn.externals import joblib 
 from futils import *
 from loss import loss
+from weights_init import weights_init

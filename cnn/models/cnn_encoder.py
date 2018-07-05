@@ -1,4 +1,5 @@
 from header import *
+from weights_init import weights_init
 
 def out_size(l_in, kernel_size, padding=0, dilation=1, stride=1):
     a = l_in + 2*padding - dilation*(kernel_size - 1) - 1
@@ -23,7 +24,7 @@ class cnn_encoder(torch.nn.Module):
             l_out_size = out_size(params.sequence_length, fsz, stride=2)
             pool_size = l_out_size // params.pooling_units
             l_conv = nn.Conv1d(params.embedding_dim, params.num_filters, fsz, stride=2)
-            torch.nn.init.xavier_uniform_(l_conv.weight)
+            weights_init(l_conv.weight)
             if params.pooling_type == 'average':
                 l_pool = nn.AvgPool1d(pool_size, stride=None, count_include_pad=True)
                 pool_out_size = (int((l_out_size - pool_size)/pool_size) + 1)*params.num_filters
@@ -37,7 +38,7 @@ class cnn_encoder(torch.nn.Module):
             self.pool_layers.append(l_pool)
         self.fin_layer = nn.Linear(fin_l_out_size, params.H_dim, bias=False)
         self.bn_2 = nn.BatchNorm1d(params.H_dim)
-        torch.nn.init.xavier_uniform_(self.fin_layer.weight)
+        weights_init(self.fin_layer.weight)
         # self.mu = nn.Linear(fin_l_out_size, params.Z_dim, bias=True)
         # self.var = nn.Linear(fin_l_out_size, params.Z_dim, bias=True)
         # torch.nn.init.xavier_uniform_(self.var.weight)

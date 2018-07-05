@@ -18,8 +18,10 @@ import scipy
 import subprocess
 from scipy import sparse
 def weights_init(m):
-    torch.nn.init.xavier_uniform_(m.weight.data)
-
+    if(torch.__version__=='0.4.0'):
+    	torch.nn.init.xavier_uniform_(m)
+    else:
+	torch.nn.init.xavier_uniform(m)
 def get_gpu_memory_map(boom, name=False):
     result = subprocess.check_output(
         [
@@ -101,16 +103,16 @@ def save_load_data(params, save=0):
     params.go_token = '<GO/>'
     params.end_token = '<END/>'
     #####################################################
-    # params.data_path = '../datasets/amzn_12/amzn_12'
-    # params.data_path = '../datasets/Eurlex/eurlex'
-    params.data_path = '../datasets/rcv/rcv'
+    params.data_path = '../datasets/amzn_12/amzn_12'
+    #params.data_path = '../datasets/Eurlex/eurlex'
+    #params.data_path = '../datasets/rcv/rcv'
     #####################################################
     if(save):
         print("Loading Data")
         #####################################################
-        # params.data_path = '../datasets/amzn_12/amzn_12.p'
-        # params.data_path = '../datasets/Eurlex/eurlex_raw_text.p'
-        params.data_path = '../datasets/rcv/rcv.p'
+        params.data_path = '../datasets/amzn_12/amzn_12.p'
+        #params.data_path = '../datasets/Eurlex/eurlex_raw_text.p'
+        #params.data_path = '../datasets/rcv/rcv.p'
         #####################################################
         x_tr, y_tr, x_te, y_te, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
         x_tr = x_tr.astype(np.int32)
@@ -118,14 +120,14 @@ def save_load_data(params, save=0):
         y_tr = y_tr.astype(np.int32)
         y_te = y_te.astype(np.int32)
         #####################################################
-        # params.data_path = '../datasets/amzn_12/amzn_12'
+        params.data_path = '../datasets/amzn_12/amzn_12'
         # params.data_path = '../datasets/Eurlex/eurlex'
-        params.data_path = '../datasets/rcv/rcv'
+        #params.data_path = '../datasets/rcv/rcv'
         #####################################################
-        if(y_tr.shape[1] > y_te.shape[1]):
-            y_te = y_te.resize((np.shape(y_te)[0], np.shape(y_tr)[1]))
-        elif(y_tr.shape[1] < y_te.shape[1]):
-            y_te = y_te[:, :y_tr.shape[1]]
+        #if(y_tr.shape[1] > y_te.shape[1]):
+        #    y_te = y_te.resize((np.shape(y_te)[0], np.shape(y_tr)[1]))
+        #elif(y_tr.shape[1] < y_te.shape[1]):
+        #    y_te = y_te[:, :y_tr.shape[1]]
         
         x_tr = sparse.csr_matrix(x_tr)
         x_te = sparse.csr_matrix(x_te)

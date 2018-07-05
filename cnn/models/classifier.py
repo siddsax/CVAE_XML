@@ -1,5 +1,5 @@
 from header import *
-
+from weights_init import weights_init
 # class classifier(nn.Module):
 #     def __init__(self, params):
 #         super(classifier, self).__init__()
@@ -16,11 +16,6 @@ from header import *
 #         H = self.sigmoid(H)
 #         return H
 
-
-
-
-from header import *
-
 class classifier(nn.Module):
     def __init__(self, params):
         super(classifier, self).__init__()
@@ -32,8 +27,8 @@ class classifier(nn.Module):
         # self.bn_1 = nn.BatchNorm1d(params.h_dim)
         # self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        torch.nn.init.xavier_uniform_(self.l1.weight)
-
+        #torch.nn.init.xavier_uniform_(self.l1.weight)
+	weights_init(self.l1.weight)
     def forward(self, H):
         # if(self.params.dropouts):
         #     H = self.drp(H)
