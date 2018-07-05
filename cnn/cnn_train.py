@@ -32,13 +32,19 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 	print(model); print("%"*100)
 	# model = nn.DataParallel(model)
 
+	# if(len(params.load_model)):
+	# 	print(params.load_model)
+	# 	model.load_state_dict(torch.load(
+	# 		params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage))
+	optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=params.lr)
 	if(len(params.load_model)):
 		print(params.load_model)
-		model.load_state_dict(torch.load(
-		    params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage))
-
-	optimizer = optim.Adam(filter(lambda p: p.requires_grad,
-	                       model.parameters()), lr=params.lr)
+		checkpoint = torch.load(params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage)
+		model.load_state_dict(checkpoint['state_dict'])
+		optimizer.load_state_dict(checkpoint['optimizer'])
+		init = checkpoint['epoch']
+	else:
+		init = 0
 
 	print('Boom 5')
 	print(num_mb)
@@ -53,13 +59,13 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			# ------------------ Load Batch Data ---------------------------------------------------------
 			if(params.dataset_gpu):
 				batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(
-				    x_tr, y_tr, params, decoder_word_input=decoder_word_input, decoder_target=decoder_target)
+					x_tr, y_tr, params, decoder_word_input=decoder_word_input, decoder_target=decoder_target)
 			else:
 				batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(
-				    x_tr, y_tr, params)
+					x_tr, y_tr, params)
 			# -----------------------------------------------------------------------------------
 			loss, kl_loss, cross_entropy, cross_entropy_y, cross_entropy_y_act = model.forward(
-			    batch_x, batch_y, decoder_word_input_b, decoder_target_b)
+				batch_x, batch_y, decoder_word_input_b, decoder_target_b)
 			# loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
 
 			loss = loss.mean().squeeze()
@@ -84,8 +90,12 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 							loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, cross_entropy_y_act.data[0], ceya_b, loss_best2, max_grad))
 				if not os.path.exists('saved_models/' + params.model_name):
 					os.makedirs('saved_models/' + params.model_name)
-					torch.save(model.state_dict(), "saved_models/" +
-				           params.model_name + "/model_best_batch")
+				state = {
+					'epoch' : epoch,
+					'state_dict' : model.state_dict(),
+					'optimizer' : optimizer.state_dict()
+				}
+				torch.save(state, "saved_models/" + params.model_name + "/model_best_batch")
 
 				if(loss.data[0] < loss_best2):
 					loss_best2 = loss.data[0]
@@ -132,7 +142,12 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			best_epch_loss = loss_epch
 			if not os.path.exists('saved_models/' + params.model_name ):
 				os.makedirs('saved_models/' + params.model_name)
-			torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
+			state = {
+					'epoch' : epoch,
+					'state_dict' : model.state_dict(),
+					'optimizer' : optimizer.state_dict()
+			}
+			torch.save(state, "saved_models/" + params.model_name + "/model_best")
 
 		print('End-of-Epoch: Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss_epch, kl_epch, recon_epch, best_epch_loss))
 
@@ -151,7 +166,13 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 
 		if params.save:
 			if epoch % params.save_step == 0:
-				torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_" + str(epoch))
+				state = {
+					'epoch' : epoch,
+					'state_dict' : model.state_dict(),
+					'optimizer' : optimizer.state_dict()
+				}
+				torch.save(state, "saved_models/" + params.model_name + "/model_" + str(epoch))
+				
 
 		# if(params.disp_flg):
 		#     if(epoch==0):
