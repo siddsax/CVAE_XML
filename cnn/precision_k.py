@@ -11,7 +11,7 @@ def precision_k(true_mat, score_mat,k):
         score_mat = np.ceil(score_mat)
         kk = np.argwhere(score_mat>0)
         mat = np.multiply(score_mat, true_mat)
-        num = np.sum(mat,1)
+        num = np.sum(mat,axis=1)
         p[k] = np.mean(num/(k+1))
     return p
 

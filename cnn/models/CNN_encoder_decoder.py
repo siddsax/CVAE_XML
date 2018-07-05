@@ -3,6 +3,7 @@ from cnn_decoder import cnn_decoder
 from cnn_encoder import cnn_encoder
 from classifier import classifier
 from variational import variational
+from precision_k import precision_k
 class cnn_encoder_decoder(nn.Module):
     def __init__(self, params, embedding_weights):
         super(cnn_encoder_decoder, self).__init__()

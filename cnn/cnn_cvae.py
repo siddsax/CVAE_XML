@@ -40,7 +40,8 @@ parser.add_argument('--pooling_type', help='max or average', type=str, default='
 parser.add_argument('--model_type', help='glove or GoogleNews', type=str, default='glove')
 parser.add_argument('--num_features', help='50, 100, 200, 300', type=int, default=300)
 parser.add_argument('--dropouts', help='0 for not using, 1 for using', type=int, default=0)
-
+parser.add_argument('--clip', help='gradient clipping', type=float, default=1000)
+parser.add_argument('--dataset_gpu', help='load dataset in full to gpu', type=int, default=1)
 
 params = parser.parse_args()
 
@@ -57,6 +58,37 @@ else:
     params.data_path = '../datasets/rcv/rcv.p'# + params.data_set
 x_tr, x_te, y_tr, y_te, x_20, y_20, params.vocabulary, params.vocabulary_inv, params = save_load_data(params, save=params.load_data)
 
+if(torch.cuda.is_available()):
+    print("--------------- Using GPU! ---------")
+    params.dtype_f = torch.cuda.FloatTensor
+    params.dtype_i = torch.cuda.LongTensor
+else:
+    params.dtype_f = torch.FloatTensor
+    params.dtype_i = torch.LongTensor
+    print("=============== Using CPU =========")
+
+if(params.dataset_gpu):
+    x_tr = x_tr.todense()
+    y_tr = x_tr.todense()
+    params.go_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.go_token]
+    params.end_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.end_token]
+    decoder_word_input = np.concatenate((params.go_row,x_tr), axis=1)
+    decoder_target = np.concatenate((x_tr, params.end_row), axis=1)
+    x_tr = Variable(torch.from_numpy(x_tr.astype('int')).type(params.dtype_i))
+    y_tr = Variable(torch.from_numpy(y_tr.astype('float')).type(params.dtype_f))
+    decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')).type(params.dtype_i))
+    decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(params.dtype_i))
+
+    x_te = x_tr.todense()
+    params.go_row = np.ones((x_te.shape[0],1))*params.vocabulary[params.go_token]
+    params.end_row = np.ones((x_te.shape[0],1))*params.vocabulary[params.end_token]
+    decoder_word_input_t = np.concatenate((params.go_row,x_te), axis=1)
+    decoder_target_t = np.concatenate((x_te, params.end_row), axis=1)
+    x_te = Variable(torch.from_numpy(x_te.astype('int')).type(params.dtype_i))
+    # y_te = Variable(torch.from_numpy(y_te.astype('float')).type(params.dtype_f))
+    decoder_word_input_t = Variable(torch.from_numpy(decoder_word_input_t.astype('int')).type(params.dtype_i))
+    decoder_target_t = Variable(torch.from_numpy(decoder_target_t.astype('int')).type(params.dtype_i))
+
 params = update_params(params)
 # -----------------------  Loss ------------------------------------
 params.loss_fn = getattr(loss(), params.loss_type)
@@ -71,10 +103,14 @@ if torch.cuda.is_available():
 else:
     params.dtype = torch.FloatTensor
 
-
 if(params.training):
-    train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params)
+    if(params.dataset_gpu):
+        train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder_word_input=decoder_word_input, decoder_target=decoder_target)#, decoder_word_input_t=decoder_word_input_t, decoder_target_t=decoder_target_t)
+    else:
+        train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params)
 
 else:
-    test_class(x_te, y_te, params, x_tr=x_tr, y_tr=y_tr, embedding_weights=embedding_weights)
-    # test_gen(x_te, y_te, embedding_weights, params)
+    if(params.dataset_gpu):
+        test_class(x_te, y_te, params, x_tr=x_tr, y_tr=y_tr, embedding_weights=embedding_weights)#, decoder_word_input=decoder_word_input_t, decoder_target=decoder_target_t)
+    else:
+        test_class(x_te, y_te, params, x_tr=x_tr, y_tr=y_tr)
