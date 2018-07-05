@@ -1,5 +1,5 @@
 from header import *
-
+import math
 class fnn_model_class(nn.Module):
     def __init__(self, params):
         super(fnn_model_class, self).__init__()

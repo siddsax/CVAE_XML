@@ -24,10 +24,11 @@ parser.add_argument('--lm', dest='load_model', type=str, default="", help='model
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
 parser.add_argument('--pp', dest='pp_flg', type=int, default=0, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
-parser.add_argument('--loss', dest='loss_type', type=str, default="L1Loss", help='model name')
+parser.add_argument('--loss', dest='loss_type', type=str, default="BCELoss", help='model name')
+parser.add_argument('--clip', dest='clip', type=float, default=5, help='model name')
 
 params = parser.parse_args()
-params.clip = 5
+#params.clip = 5
 # --------------------------------------------------------------------------------------------------------------
 if(len(params.model_name)==0):
     params.model_name = "Classify_MLP_Z_dim-{}_mb_size-{}_h_dim-{}_pp_flg-{}_beta-{}_dataset-{}_final_ly-{}_loss-{}".format(params.Z_dim, params.mb_size, \

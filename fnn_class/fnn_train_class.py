@@ -16,13 +16,11 @@ def train(x_tr, y_tr, x_te, y_te, params):
     if(len(params.load_model)):
         print(params.load_model)
         model.load_state_dict(torch.load(params.load_model + "/model_best"))
+    if(torch.cuda.is_available()):
+        model = model.cuda()
+        print("--------------- Using GPU! ---------")
     else:
-        
-        if(torch.cuda.is_available()):
-            model = model.cuda()
-            print("--------------- Using GPU! ---------")
-        else:
-            print("=============== Using CPU =========")
+        print("=============== Using CPU =========")
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
@@ -68,7 +66,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
         print('End-of-Epoch: Epoch: {}; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.\
         format(epoch, loss_epch, kl_epch, recon_epch, best_epch_loss))
-        # best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+        best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
         print("="*50)
         
         # --------------- Periodical Save and Display -----------------------------------------------------
