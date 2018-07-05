@@ -18,8 +18,10 @@ import scipy
 import subprocess
 from scipy import sparse
 def weights_init(m):
-    torch.nn.init.xavier_uniform_(m.weight.data)
-
+    if(torch.__version__=='0.4.0'):
+    	torch.nn.init.xavier_uniform_(m)
+    else:
+	    torch.nn.init.xavier_uniform(m)
 def get_gpu_memory_map(boom, name=False):
     result = subprocess.check_output(
         [
@@ -100,26 +102,47 @@ def save_load_data(params, save=0):
     params.pad_token = "<PAD/>"
     params.go_token = '<GO/>'
     params.end_token = '<END/>'
+    #####################################################
+    params.data_path = '../datasets/amzn_12/amzn_12'
+    #params.data_path = '../datasets/Eurlex/eurlex'
+    #params.data_path = '../datasets/rcv/rcv'
+    #####################################################
     if(save):
         print("Loading Data")
-        print(params.data_path)
+        #####################################################
+        params.data_path = '../datasets/amzn_12/amzn_12.p'
+        #params.data_path = '../datasets/Eurlex/eurlex_raw_text.p'
+        #params.data_path = '../datasets/rcv/rcv.p'
+        #####################################################
         x_tr, y_tr, x_te, y_te, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
         x_tr = x_tr.astype(np.int32)
         x_te = x_te.astype(np.int32)
         y_tr = y_tr.astype(np.int32)
         y_te = y_te.astype(np.int32)
-        params.data_path = '../datasets/rcv/rcv'
-        np.save(params.data_path + '/x_train', x_tr)
+        #####################################################
+        params.data_path = '../datasets/amzn_12/amzn_12'
+        # params.data_path = '../datasets/Eurlex/eurlex'
+        #params.data_path = '../datasets/rcv/rcv'
+        #####################################################
+        #if(y_tr.shape[1] > y_te.shape[1]):
+        #    y_te = y_te.resize((np.shape(y_te)[0], np.shape(y_tr)[1]))
+        #elif(y_tr.shape[1] < y_te.shape[1]):
+        #    y_te = y_te[:, :y_tr.shape[1]]
+        
+        x_tr = sparse.csr_matrix(x_tr)
+        x_te = sparse.csr_matrix(x_te)
+        sparse.save_npz(params.data_path + '/x_train', x_tr)
         sparse.save_npz(params.data_path + '/y_train', y_tr)
         sparse.save_npz(params.data_path + '/y_test', y_te)
-        np.save(params.data_path + '/x_test', x_te)
+        sparse.save_npz(params.data_path + '/x_test', x_te)
         np.save(params.data_path + '/vocab', vocabulary)
         np.save(params.data_path + '/vocab_inv', vocabulary_inv)
 
-    x_tr = np.load(params.data_path + '/x_train.npy')
-    y_tr = sparse.load_npz(params.data_path + '/y_train.npz').todense()
-    x_te = np.load(params.data_path + '/x_test.npy')
-    y_te = sparse.load_npz(params.data_path + '/y_test.npz').todense()
+    x_tr = sparse.load_npz(params.data_path + '/x_train.npz')
+    y_tr = sparse.load_npz(params.data_path + '/y_train.npz')
+    x_te = sparse.load_npz(params.data_path + '/x_test.npz')
+    y_te = sparse.load_npz(params.data_path + '/y_test.npz')
+
     x_20 = np.load('../datasets/rcv/rcv/x_1.npy')
     y_20 = np.load('../datasets/rcv/rcv/y_1.npy')
 
@@ -135,8 +158,9 @@ def save_load_data(params, save=0):
 
     return x_tr, x_te, y_tr, y_te, x_20, y_20, vocabulary, vocabulary_inv, params
 
-def load_batch_cnn(x_tr, y_tr, params, batch=True, batch_size=0):
+def load_batch_cnn(x_tr, y_tr, params, batch=True, batch_size=0, decoder_word_input=None, decoder_target=None, testing=0):
 
+    indexes = 0 # for scope
     if(batch):
         if(batch_size):
             params.go_row = np.ones((batch_size,1))*params.vocabulary[params.go_token]
@@ -152,13 +176,22 @@ def load_batch_cnn(x_tr, y_tr, params, batch=True, batch_size=0):
         params.go_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.go_token]
         params.end_row = np.ones((x_tr.shape[0],1))*params.vocabulary[params.end_token]
 
-    decoder_word_input = np.concatenate((params.go_row,x_tr), axis=1)
-    decoder_target = np.concatenate((x_tr, params.end_row), axis=1)
-    x_tr = Variable(torch.from_numpy(x_tr.astype('int')).type(params.dtype_i))
-    y_tr = Variable(torch.from_numpy(y_tr.astype('float')).type(params.dtype_f))
-    decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')).type(params.dtype_i))
-    decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(params.dtype_i))
-    decoder_target = decoder_target.view(-1)
+    if(params.dataset_gpu):
+        decoder_word_input = decoder_word_input[indexes,:]
+        decoder_target = decoder_target[indexes,:]
+        decoder_target = decoder_target.view(-1)
+    else:
+        x_tr = x_tr.todense()
+        y_tr = y_tr.todense()
+
+        decoder_word_input = np.concatenate((params.go_row,x_tr), axis=1)
+        decoder_target = np.concatenate((x_tr, params.end_row), axis=1)
+        x_tr = Variable(torch.from_numpy(x_tr.astype('int')).type(params.dtype_i))
+        if(testing==0):
+            y_tr = Variable(torch.from_numpy(y_tr.astype('float')).type(params.dtype_f))
+        decoder_word_input = Variable(torch.from_numpy(decoder_word_input.astype('int')).type(params.dtype_i))
+        decoder_target = Variable(torch.from_numpy(decoder_target.astype('int')).type(params.dtype_i))
+        decoder_target = decoder_target.view(-1)
 
     return x_tr, y_tr, decoder_word_input, decoder_target
     

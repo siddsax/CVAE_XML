@@ -11,14 +11,14 @@ class variational(nn.Module):
         self.var = nn.Linear(params.h_dim, params.Z_dim)
         if(self.params.dropouts):
             self.drp = nn.Dropout(p=.5)
-        torch.nn.init.xavier_uniform_(self.l1.weight)
-        torch.nn.init.xavier_uniform_(self.var.weight)
-        torch.nn.init.xavier_uniform_(self.mu.weight)
+        weights_init(self.l1.weight)
+        weights_init(self.var.weight)
+        weights_init(self.mu.weight)
 
     def forward(self, H):
         H = self.l1(H)
         H = self.relu(H)
-        H = self.bn_1(H)
-        if(self.params.dropouts):
-            H = self.drp(H)
+        # H = self.bn_1(H)
+        # if(self.params.dropouts):
+        #     H = self.drp(H)
         return self.mu(H), self.var(H)

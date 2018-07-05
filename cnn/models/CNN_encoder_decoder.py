@@ -3,6 +3,9 @@ from cnn_decoder import cnn_decoder
 from cnn_encoder import cnn_encoder
 from classifier import classifier
 from variational import variational
+from precision_k import precision_k
+from weights_init import weights_init
+
 class cnn_encoder_decoder(nn.Module):
     def __init__(self, params, embedding_weights):
         super(cnn_encoder_decoder, self).__init__()
@@ -21,8 +24,8 @@ class cnn_encoder_decoder(nn.Module):
         Y = self.classifier(H)
         cross_entropy_y = self.params.loss_fn(Y, batch_y)
  
-        if(cross_entropy_y<0):
-            print(cross_entropy)
+        if(cross_entropy_y.data[0]<0):
+            print(cross_entropy_y)
             print(Y[0:100])
             print(batch_y[0:100])
             sys.exit()
