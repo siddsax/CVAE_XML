@@ -25,7 +25,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
 
     for epoch in range(params.num_epochs):
-        alpha = min(1.0, epoch*10e3)#0.0
+        alpha = min(1.0, epoch*10e3)#
         kl_epch = 0
         recon_epch = 0
         for it in range(int(num_mb)):
@@ -34,6 +34,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             loss = alpha*kl_loss + params.beta*recon_loss
             kl_epch += kl_loss.data
             recon_epch += recon_loss.data
+            # if it % 100 == 0:
             if it % int(num_mb/3) == 0:
                 if(loss<loss_best2):
                     loss_best2 = loss
@@ -44,13 +45,11 @@ def train(x_tr, y_tr, x_te, y_te, params):
             # ------------------------ Propogate loss -----------------------------------
             loss.backward()
             del loss
-            torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
-            for p in model.parameters():
-                p.data.add_(-params.lr, p.grad.data)
-            # optimizer.step()
-            if(it % int(num_mb/3) == 0):
-                thefile = open('gradient_classifier.txt', 'a+')
-                write_grads(model, thefile)
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
+            # for p in model.parameters():
+            #     if(p.grad is not None):
+            #         p.data.add_(-params.lr, p.grad.data)
+            optimizer.step()
             optimizer.zero_grad()
             # ----------------------------------------------------------------------------
         
@@ -66,7 +65,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
         print('End-of-Epoch: Epoch: {}; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.\
         format(epoch, loss_epch, kl_epch, recon_epch, best_epch_loss))
-        best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+        # best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
         print("="*50)
         
         # --------------- Periodical Save and Display -----------------------------------------------------

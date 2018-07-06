@@ -10,7 +10,7 @@ parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do
 parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
-parser.add_argument('--lr', dest='lr', type=int, default=1e-3, help='Learning Rate')
+parser.add_argument('--lr', dest='lr', type=int, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=100, help='step for displaying loss')
 parser.add_argument('--b', dest='beta', type=float, default=1.0, help='factor multipied to likelihood param')
@@ -47,7 +47,6 @@ elif(params.data_set=="Eurlex"):
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/tx.npz')
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/ty.npz')
 # ----------------------------------------------------------------------
-
 # -------------------------- PP -------------------------------------------
 if(params.pp_flg):
     if(params.pp_flg==1):

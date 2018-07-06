@@ -36,7 +36,7 @@ class decoder(torch.nn.Module):
         
         o = self.l0(inputs)
         o = self.l1(o)
-        o = self.bn(o)
+        # o = self.bn(o)
         o = self.l2(o)
         if(type(self.l3)!=str):
             o = self.l3(o)

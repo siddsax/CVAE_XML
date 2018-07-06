@@ -30,7 +30,7 @@ class encoder(torch.nn.Module):
             print(torch.isnan(self.l0.bias).any())
             sys.exit()
         o = self.l1(o)
-        o = self.bn(o)
+        # o = self.bn(o)
         o_ = self.mu(o)
         o__ = self.var(o)
         if(torch.isnan(o__).any()):
