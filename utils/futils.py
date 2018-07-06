@@ -103,9 +103,9 @@ def save_load_data(params, save=0):
     params.go_token = '<GO/>'
     params.end_token = '<END/>'
     #####################################################
-    params.data_path = '../datasets/amzn_12/amzn_12'
+    # params.data_path = '../datasets/amzn_12/amzn_12'
     #params.data_path = '../datasets/Eurlex/eurlex'
-    #params.data_path = '../datasets/rcv/rcv'
+    params.data_path = '../datasets/rcv/rcv'
     #####################################################
     if(save):
         print("Loading Data")
