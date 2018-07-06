@@ -65,7 +65,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
         print('End-of-Epoch: Epoch: {}; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.\
         format(epoch, loss_epch, kl_epch, recon_epch, best_epch_loss))
-        # best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+        best_test_loss = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
         print("="*50)
         
         # --------------- Periodical Save and Display -----------------------------------------------------
