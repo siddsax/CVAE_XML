@@ -28,7 +28,7 @@ class cnn_decoder(nn.Module):
     def forward(self, decoder_input, z, batch_y):
         [batch_size, seq_len, embed_size] = decoder_input.size()
         z = torch.cat([z, batch_y], 1)
-        z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim + self.params.classes)
+        z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim + self.params.H_dim)
         x = torch.cat([decoder_input, z], 2)
         x = x.transpose(1, 2).contiguous()
         x = self.drp(x)

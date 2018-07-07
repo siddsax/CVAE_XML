@@ -28,9 +28,10 @@ class classifier(nn.Module):
         # self.l1 = nn.Linear(params.H_dim, params.h_dim)
         if(self.params.dropouts):
             self.drp = nn.Dropout(.5)
-        self.l1 = nn.Linear(params.H_dim, params.y_dim)
+        self.l1 = nn.Linear(params.h_dim, params.H_dim)
+        self.l2 = nn.Linear(params.H_dim, params.y_dim)
         # self.bn_1 = nn.BatchNorm1d(params.h_dim)
-        # self.relu = nn.ReLU()
+        self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         torch.nn.init.xavier_uniform_(self.l1.weight)
 
@@ -38,7 +39,8 @@ class classifier(nn.Module):
         # if(self.params.dropouts):
         #     H = self.drp(H)
         H = self.l1(H)
-        # H = self.relu(H)
-        H = self.sigmoid(H)
+        H = self.relu(H)
+        H1 = self.l2(H)
+        H1 = self.sigmoid(H1)
         # H = self.l2(H)
-        return H
+        return H1, H 

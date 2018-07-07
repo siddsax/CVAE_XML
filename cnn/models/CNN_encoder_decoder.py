@@ -24,17 +24,17 @@ class cnn_encoder_decoder(nn.Module):
         eps = torch.exp(0.5 * z_lvar).type(self.params.dtype_f)
         z = z * eps + z_mu
 
-        Y = self.classifier(H)
+        Y, H = self.classifier(H)
         cross_entropy_y = self.params.loss_fn(Y, batch_y)
  
         decoder_input = self.embedding_layer.forward(decoder_word_input)
-        X_sample = self.decoder.forward(decoder_input, z, Y)
+        X_sample = self.decoder.forward(decoder_input, z, H)
         X_sample = X_sample.view(-1, self.params.vocab_size)
         cross_entropy = torch.nn.functional.cross_entropy(X_sample, decoder_target)
 
-        X_sample = self.decoder.forward(decoder_input, z, batch_y) # Supervised loss on encoder
-        X_sample = X_sample.view(-1, self.params.vocab_size)
-        cross_entropy_y_act = torch.nn.functional.cross_entropy(X_sample, decoder_target)
+        # X_sample = self.decoder.forward(decoder_input, z, batch_y) # Supervised loss on encoder
+        # X_sample = X_sample.view(-1, self.params.vocab_size)
+        # cross_entropy_y_act = torch.nn.functional.cross_entropy(X_sample, decoder_target)
         
         if(cross_entropy<0):
             print(cross_entropy)
@@ -46,8 +46,9 @@ class cnn_encoder_decoder(nn.Module):
             print(Y[0:100])
             print(batch_y[0:100])
             sys.exit()
-        # loss = cross_entropy + kl_loss + cross_entropy_y + cross_entropy_y_act
+        loss = cross_entropy + kl_loss + cross_entropy_y #+ cross_entropy_y_act
         # loss = cross_entropy + kl_loss + cross_entropy_y_act
-        loss = cross_entropy + kl_loss
-        return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1), cross_entropy_y_act.view(-1,1)
+        # loss = cross_entropy + kl_loss
+        return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1)#, cross_entropy_y_act.view(-1,1)
+        # return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1), cross_entropy_y_act.view(-1,1)
         # return cross_entropy_y.view(-1,1)
