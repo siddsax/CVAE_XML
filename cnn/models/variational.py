@@ -1,5 +1,7 @@
 from header import *
 from weights_init import weights_init
+from timeit import default_timer as timer
+
 
 class variational(nn.Module):
     def __init__(self, params):

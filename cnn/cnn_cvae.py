@@ -6,7 +6,7 @@ import pdb
 # ------------------------ Params -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
-parser.add_argument('--zd', dest='Z_dim', type=int, default=100, help='Latent layer dimension')
+parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=20, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
 parser.add_argument('--Hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
@@ -41,7 +41,7 @@ parser.add_argument('--model_type', help='glove or GoogleNews', type=str, defaul
 parser.add_argument('--num_features', help='50, 100, 200, 300', type=int, default=300)
 parser.add_argument('--dropouts', help='0 for not using, 1 for using', type=int, default=0)
 parser.add_argument('--clip', help='gradient clipping', type=float, default=1000)
-parser.add_argument('--dataset_gpu', help='load dataset in full to gpu', type=int, default=1)
+parser.add_argument('--dataset_gpu', help='load dataset in full to gpu', type=int, default=0)
 
 params = parser.parse_args()
 

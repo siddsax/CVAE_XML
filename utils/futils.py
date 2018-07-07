@@ -199,6 +199,7 @@ def update_params(params):
     if(len(params.model_name)==0):
         params.model_name = gen_model_file(params)
     params.decoder_kernels = [(400, params.Z_dim + params.H_dim + params.embedding_dim, 3),
+    # params.decoder_kernels = [(400, params.Z_dim + params.classes + params.embedding_dim, 3),
                                 (450, 400, 3),
                                 (500, 450, 3)]
     params.decoder_dilations = [1, 2, 4]

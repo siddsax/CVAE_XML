@@ -1,5 +1,6 @@
 from header import *
 from weights_init import weights_init
+from timeit import default_timer as timer
 
 class cnn_decoder(nn.Module):
     def __init__(self, params):
@@ -31,16 +32,20 @@ class cnn_decoder(nn.Module):
     def forward(self, decoder_input, z, batch_y):
         [batch_size, seq_len, _] = decoder_input.size()
         z = torch.cat([z, batch_y], 1)
-        z = torch.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.Z_dim + self.params.H_dim)
+        z = z.view(batch_size, 1,self.params.Z_dim + self.params.H_dim)
+        z = z.expand(-1,seq_len,-1)
         x = torch.cat([decoder_input, z], 2)
         x = x.transpose(1, 2).contiguous()
         # if(self.params.dropouts):
         #     x = self.drp(x)
+        start = timer()
         for layer in range(len(self.params.decoder_kernels)):
             x = self.conv_layers[layer](x)
             x_width = x.size()[2]
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
             x = self.relu(x)
+            print("Time taken in layer {} in decoder is {}".format(layer,timer()-start))
+            start  =  timer()
             # x = self.bn_x[layer](x)
             # if(self.params.dropouts):
             #     x = self.drp_7(x)
@@ -51,5 +56,6 @@ class cnn_decoder(nn.Module):
             x = self.fc(x)#.cuda(1)
         else:
             x = self.fc(x)
+        print("FC Layer in Decoder: {}".format(timer()- start))
         x = x.view(-1, seq_len, self.params.vocab_size)
         return x
