@@ -96,12 +96,17 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         rem = x_tr.shape[0]%params.mb_size
         e_emb = model.embedding_layer.forward(x_tr[-rem:].view(rem, x_te.shape[1]))
         H = model.encoder.forward(e_emb)
-        Y[-rem:, :] = model.classifier(H).data
+        k = model.classifier(H)
+        k = k.data
+        Y[-rem:, :] = k
+        
         for i in range(0, x_tr.shape[0] - rem, params.mb_size ):
             # print(i)
             e_emb = model.embedding_layer.forward(x_tr[i:i+params.mb_size].view(params.mb_size, x_te.shape[1]))
             H = model.encoder.forward(e_emb)
-            Y[i:i+params.mb_size,:] = model.classifier(H).data
+            k, _ = model.classifier(H)
+            k = k.data
+            Y[i:i+params.mb_size,:] = k 
     
         cross_entropy_y = log_loss(y_tr, Y)
         print('Train Loss; {:.4};'.format(cross_entropy_y))#, kl_loss.data, recon_loss.data))
@@ -120,7 +125,8 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         # y_te_b = y_te_b.data.numpy()
         e_emb2 = model.embedding_layer.forward(x_te_b.view(params.mb_size, x_te_b.shape[1]))
         H2 = model.encoder.forward(e_emb2)
-        Y2 = model.classifier(H2).data
+        Y2, _ = model.classifier(H2)
+        Y2 = Y2.data
         cross_entropy_y2 += log_loss(y_te_b, Y2)*params.mb_size # Reverse of pytorch
         prec_1 += precision_k(y_te_b, Y2, 1)[0]*params.mb_size # Reverse of pytorch
 
@@ -130,7 +136,8 @@ def test_class(x_te, y_te, params, model=None, x_tr=None, y_tr=None, embedding_w
         # y_te_b = y_te_b.data.numpy()        
         e_emb2 = model.embedding_layer.forward(x_te_b[-rem:].view(rem, x_te_b.shape[1]))
         H2 = model.encoder.forward(e_emb2)
-        Y2 = model.classifier(H2).data
+        Y2, _= model.classifier(H2)
+        Y2 = Y2.data
         cross_entropy_y2 += log_loss(y_te_b, Y2)*rem # Reverse of pytorch
         prec_1 += precision_k(y_te_b, Y2, 1)[0]*rem # Reverse of pytorch
 

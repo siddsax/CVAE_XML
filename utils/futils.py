@@ -103,9 +103,9 @@ def save_load_data(params, save=0):
     params.go_token = '<GO/>'
     params.end_token = '<END/>'
     #####################################################
-    # params.data_path = '../datasets/amzn_12/amzn_12'
+    params.data_path = '../datasets/amzn_12/amzn_12'
     #params.data_path = '../datasets/Eurlex/eurlex'
-    params.data_path = '../datasets/rcv/rcv'
+    # params.data_path = '../datasets/rcv/rcv'
     #####################################################
     if(save):
         print("Loading Data")
@@ -198,7 +198,7 @@ def load_batch_cnn(x_tr, y_tr, params, batch=True, batch_size=0, decoder_word_in
 def update_params(params):
     if(len(params.model_name)==0):
         params.model_name = gen_model_file(params)
-    params.decoder_kernels = [(400, params.Z_dim + params.classes + params.embedding_dim, 3),
+    params.decoder_kernels = [(400, params.Z_dim + params.H_dim + params.embedding_dim, 3),
                                 (450, 400, 3),
                                 (500, 450, 3)]
     params.decoder_dilations = [1, 2, 4]

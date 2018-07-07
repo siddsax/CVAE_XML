@@ -6,7 +6,7 @@ import pdb
 # ------------------------ Params -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
-parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
+parser.add_argument('--zd', dest='Z_dim', type=int, default=100, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=20, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
 parser.add_argument('--Hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
