@@ -5,11 +5,11 @@ class variational(nn.Module):
     def __init__(self, params):
         super(variational, self).__init__()
         self.params = params
-        self.l1 = nn.Linear(params.h_dim, params.H_dim)
+        self.l1 = nn.Linear(params.H_dim, int(params.H_dim/2))
         self.relu = nn.ReLU()
         self.bn_1 = nn.BatchNorm1d(params.H_dim)
-        self.mu = nn.Linear(params.H_dim, params.Z_dim)
-        self.var = nn.Linear(params.H_dim, params.Z_dim)
+        self.mu = nn.Linear(int(params.H_dim/2), params.Z_dim)
+        self.var = nn.Linear(int(params.H_dim/2), params.Z_dim)
         if(self.params.dropouts):
             self.drp = nn.Dropout(p=.5)
         weights_init(self.l1.weight)

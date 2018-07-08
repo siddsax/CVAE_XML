@@ -36,7 +36,7 @@ class cnn_encoder(torch.nn.Module):
             self.conv_layers.append(l_conv)
             self.bn_x.append(bn_x)
             self.pool_layers.append(l_pool)
-        self.fin_layer = nn.Linear(fin_l_out_size, params.h_dim, bias=False)
+        self.fin_layer = nn.Linear(fin_l_out_size, params.H_dim, bias=False)
         self.bn_2 = nn.BatchNorm1d(params.H_dim)
         weights_init(self.fin_layer.weight)
         # self.mu = nn.Linear(fin_l_out_size, params.Z_dim, bias=True)

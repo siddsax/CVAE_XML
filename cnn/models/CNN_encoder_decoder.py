@@ -27,7 +27,7 @@ class cnn_encoder_decoder(nn.Module):
         eps = torch.exp(0.5 * z_lvar).type(self.params.dtype_f)
         z = z * eps + z_mu
 
-        Y, H = self.classifier(H)
+        Y= self.classifier(H)
         cross_entropy_y = self.params.loss_fn(Y, batch_y)
  
         decoder_input = self.embedding_layer.forward(decoder_word_input)
@@ -49,6 +49,8 @@ class cnn_encoder_decoder(nn.Module):
             print(Y[0:100])
             print(batch_y[0:100])
             sys.exit()
-        loss = cross_entropy + kl_loss + cross_entropy_y# + cross_entropy_y_act
+
+        # since cross enctropy is averaged over seq_len, it is necessary to approximate new kld
+        loss = self.params.seq_len*cross_entropy + kl_loss + cross_entropy_y# + cross_entropy_y_act
         return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1)#, cross_entropy_y_act.view(-1,1)
         # return cross_entropy_y.view(-1,1)
