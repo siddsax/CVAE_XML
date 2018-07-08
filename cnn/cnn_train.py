@@ -1,5 +1,6 @@
 from header import *
 from cnn_test import *
+from timeit import default_timer as timer
 
 # ---------------------------------------------------------------------------------
 
@@ -50,8 +51,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 		recon_epch = 0.0
 		cey_epch = 0.0
 		ceya_epch = 0.0
-
 		for i in range(int(num_mb)):
+			 
 			# ------------------ Load Batch Data ---------------------------------------------------------
 			if(params.dataset_gpu):
 				batch_x, batch_y, decoder_word_input_b, decoder_target_b = load_batch_cnn(
@@ -79,15 +80,16 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			cey_epch += cross_entropy_y.data[0]
 			# ceya_epch += cross_entropy_y_act.data[0]
 
-			if i % int(100) == 0:
+			end = timer()
+			if i % int(100) == 0 and i > 0:
 				if(torch.__version__ == '0.4.0'):
-					print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}'.format(i,
-							loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, loss_best2, max_grad))
+						print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}: Time Iter {}'.format(i,
+							loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, loss_best2, max_grad, end-start))
 				else:
-					print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}'.format(i,
-							loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, loss_best2, max_grad))
+						print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}: Time Iter {}'.format(i,
+							loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, loss_best2, max_grad, end-start))
 				if not os.path.exists('saved_models/' + params.model_name):
-					os.makedirs('saved_models/' + params.model_name)
+						os.makedirs('saved_models/' + params.model_name)
 				state = {
 					'epoch' : epoch,
 					'state_dict' : model.state_dict(),
@@ -105,30 +107,30 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			# --------------------------------------------------------------------------------------------------------------
 
 			# ------------------------ Propogate loss -----------------------------------
+			start = timer()
 			loss.backward()
 			loss = loss.data[0]
 			sm = 0
 			sm2 = 0
 			max_grad = 0
 			for p in model.parameters():
-				if(p.grad is not None):
-					max_grad = max(torch.max(p.grad).data[0], max_grad)
+					if(p.grad is not None):
+							max_grad = max(torch.max(p.grad).data[0], max_grad)
 					sm += p.grad.view(-1).shape[0]
 					sm2 = p.grad.mean().squeeze()*p.grad.view(-1).shape[0]
 			avg_grad = (sm2/sm).data[0]
 			# optimizer.step()
 			if(torch.__version__ == '0.4.0'):
-				torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
+					torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
 			else:
-				torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+					torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
 			for p in model.parameters():
-				if(p.grad is not None):
-					p.data.add_(-params.lr, p.grad.data)
+					if(p.grad is not None):
+							p.data.add_(-params.lr, p.grad.data)
 			optimizer.zero_grad()
 			# ----------------------------------------------------------------------------
 			if(epoch==0):
-				break
-
+					break
 
 		kl_epch/= num_mb
 		recon_epch/= num_mb
