@@ -38,6 +38,7 @@ class cnn_decoder(nn.Module):
         x = x.transpose(1, 2).contiguous()
         # if(self.params.dropouts):
         #     x = self.drp(x)
+        torch.cuda.synchronize()
         start = timer()
         for layer in range(len(self.params.decoder_kernels)):
             x = self.conv_layers[layer](x)
@@ -45,6 +46,7 @@ class cnn_decoder(nn.Module):
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
             x = self.relu(x)
             print("Time taken in layer {} in decoder is {}".format(layer,timer()-start))
+            torch.cuda.synchronize()
             start  =  timer()
             # x = self.bn_x[layer](x)
             # if(self.params.dropouts):
