@@ -3,7 +3,12 @@ from cnn_test import *
 from timeit import default_timer as timer
 
 # ---------------------------------------------------------------------------------
-
+def losses_update(list_of_losses, losses=None):
+	if(losses is None):
+		losses = np.zeros(len(list_of_losses))
+	for i in range(len(list_of_losses)):
+		losses[i] = list_of_losses[i]
+	return losses
 
 def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder_word_input=None, decoder_target=None, decoder_word_input_t=None, decoder_target_t=None):
 	viz = Visdom()
@@ -68,28 +73,24 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			# loss = model.forward(batch_x, batch_y, decoder_word_input, decoder_target)
 
 			loss = loss.mean().squeeze()
-			kl_loss = kl_loss.mean().squeeze()
-			cross_entropy = cross_entropy.mean().squeeze()
-			cross_entropy_y = cross_entropy_y.mean().squeeze()
+			kl_loss = kl_loss.mean().squeeze().data[0]
+			cross_entropy = cross_entropy.mean().squeeze().data[0]
+			cross_entropy_y = cross_entropy_y.mean().squeeze().data[0]
 			# cross_entropy_y_act = cross_entropy_y_act.mean().squeeze()
 			# --------------------------------------------------------------------
 
 			#  --------------------- Print and plot  -------------------------------------------------------------------
-			kl_epch += kl_loss.data[0]
-			recon_epch += cross_entropy.data[0]
-			cey_epch += cross_entropy_y.data[0]
+			kl_epch += kl_loss
+			recon_epch += cross_entropy
+			cey_epch += cross_entropy_y
 			# ceya_epch += cross_entropy_y_act.data[0]
 
 			end = timer()
 			if i % int(100) == 0 and i > 0:
-				if(torch.__version__ == '0.4.0'):
-						print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}: Time Iter {}'.format(i,
-							loss.data, kl_loss.data, kl_b, cross_entropy.data, lk_b, cross_entropy_y.data, cey_b, loss_best2, max_grad, end-start))
-				else:
-						print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}: Time Iter {}'.format(i,
-							loss.data[0], kl_loss.data[0], kl_b, cross_entropy.data[0], lk_b, cross_entropy_y.data[0], cey_b, loss_best2, max_grad, end-start))
+				print('Iter-{}; Loss: {:.4}; KL-loss: {:.4} ({:.4}); recons_loss: {:.4} ({:.4}); cross_entropy_y: {:.4} ({:.4}); best_loss: {:.4}; max_grad: {}: Time Iter {}'.format(i,
+					loss.data[0], kl_loss, kl_b, cross_entropy, lk_b, cross_entropy_y, cey_b, loss_best2, max_grad, end-start))
 				if not os.path.exists('saved_models/' + params.model_name):
-						os.makedirs('saved_models/' + params.model_name)
+					os.makedirs('saved_models/' + params.model_name)
 				state = {
 					'epoch' : epoch,
 					'state_dict' : model.state_dict(),
@@ -99,11 +100,21 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 
 				if(loss.data[0] < loss_best2):
 					loss_best2 = loss.data[0]
-					lk_b = cross_entropy.data[0]
-					kl_b = kl_loss.data[0]
-					cey_b = cross_entropy_y.data[0]
+					lk_b = cross_entropy
+					kl_b = kl_loss
+					cey_b = cross_entropy_y
 					# ceya_b = cross_entropy_y_act.data[0]
-
+			
+			if(params.disp_flg):
+				losses_now = [loss, kl_loss, cross_entropy, cross_entropy_y]
+				if(i==0):
+					losses = losses_update(losses_now)
+				else:
+					for i in range(len(losses)):
+						viz.line(X=np.linspace(i-1,i,50), Y=np.linspace(losses[i], losses_now[i],50), name=str(i), update='append', win=win)
+					losses = losses_update(losses_now, losses)
+				if(i % 1000 == 0 ):
+					win = viz.line(X=np.arange(i, i + .1), Y=np.arange(0, .1))
 			# --------------------------------------------------------------------------------------------------------------
 
 			# ------------------------ Propogate loss -----------------------------------
@@ -129,8 +140,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 							p.data.add_(-params.lr, p.grad.data)
 			optimizer.zero_grad()
 			# ----------------------------------------------------------------------------
-			if(epoch==0):
-					break
+			# if(epoch==0):
+			# 		break
 
 		kl_epch/= num_mb
 		recon_epch/= num_mb
