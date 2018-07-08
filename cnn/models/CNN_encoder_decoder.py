@@ -27,11 +27,11 @@ class cnn_encoder_decoder(nn.Module):
         eps = torch.exp(0.5 * z_lvar).type(self.params.dtype_f)
         z = z * eps + z_mu
 
-        Y= self.classifier(H)
+        Y = self.classifier(H)
         cross_entropy_y = self.params.loss_fn(Y, batch_y)
  
         decoder_input = self.embedding_layer.forward(decoder_word_input)
-        X_sample = self.decoder.forward(decoder_input, z, H)
+        X_sample = self.decoder.forward(decoder_input, z)#, H)
         X_sample = X_sample.view(-1, self.params.vocab_size)
         cross_entropy = torch.nn.functional.cross_entropy(X_sample, decoder_target)
 

@@ -28,10 +28,10 @@ class cnn_decoder(nn.Module):
         self.fc = nn.Linear(self.out_size, self.params.vocab_size)
         weights_init(self.fc.weight)
         
-    def forward(self, decoder_input, z, batch_y):
+    def forward(self, decoder_input, z):#, batch_y):
         [batch_size, seq_len, _] = decoder_input.size()
-        z = torch.cat([z, batch_y], 1)
-        z = z.view(batch_size, 1,self.params.Z_dim + self.params.H_dim)
+        # z = torch.cat([z, batch_y], 1)
+        z = z.view(batch_size, 1,self.params.Z_dim)# + self.params.H_dim)
         z = z.expand(-1,seq_len,-1)
         x = torch.cat([decoder_input, z], 2)
         x = x.transpose(1, 2).contiguous()

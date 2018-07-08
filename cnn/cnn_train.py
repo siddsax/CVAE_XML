@@ -106,7 +106,7 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 					# ceya_b = cross_entropy_y_act.data[0]
 			
 			if(params.disp_flg):
-				losses_now = [loss, kl_loss, cross_entropy, cross_entropy_y]
+				losses_now = [loss.data[0], kl_loss, cross_entropy, cross_entropy_y]
 				if(i==0):
 					losses = losses_update(losses_now)
 				else:
@@ -125,8 +125,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			sm2 = 0
 			max_grad = 0
 			for p in model.parameters():
-					if(p.grad is not None):
-							max_grad = max(torch.max(p.grad).data[0], max_grad)
+				if(p.grad is not None):
+					max_grad = max(torch.max(p.grad).data[0], max_grad)
 					sm += p.grad.view(-1).shape[0]
 					sm2 = p.grad.mean().squeeze()*p.grad.view(-1).shape[0]
 			avg_grad = (sm2/sm).data[0]
