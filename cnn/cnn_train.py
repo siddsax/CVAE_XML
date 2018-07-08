@@ -14,14 +14,14 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 		model.params.dtype_f = torch.cuda.FloatTensor
 		model.params.dtype_i = torch.cuda.LongTensor
 
-		model = model.cuda()
+		model = nn.DataParallel(model.cuda())
 	else:
 		model.params.dtype_f = torch.FloatTensor
 		model.params.dtype_i = torch.LongTensor
 		print("=============== Using CPU =========")
 
 	print(model); print("%"*100)
-	print("Num Parameters : Encoder {} Classifier {} Variational {} Decoder {}".format(count_parameters(model.encoder), count_parameters(model.classifier), count_parameters(model.variational), count_parameters(model.decoder)))
+	# print("Num Parameters : Encoder {} Classifier {} Variational {} Decoder {}".format(count_parameters(model.encoder), count_parameters(model.classifier), count_parameters(model.variational), count_parameters(model.decoder)))
 
 	optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=params.lr)
 	# =============================== TRAINING ====================================
@@ -39,14 +39,18 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 			torch.cuda.synchronize()
 			start = timer()
 			loss = model.forward(batch_x, batch_y, decoder_word_input_b, decoder_target_b)
+			print(loss.shape[0])
+			loss = loss.mean().squeeze()
+			torch.cuda.synchronize()
 			propogation = timer() - start
-			torch.cuda.synchronize()
 			start = timer()
+			# loss.backward(torch.ones(loss.shape[0]).type(model.params.dtype_i))
 			loss.backward()
-			get_loss = timer() - start
 			torch.cuda.synchronize()
+			get_loss = timer() - start
 			start = timer()
 			optimizer.step()
+			torch.cuda.synchronize()
 			optim_tm = timer() - start
 
 			print("Times: Loading: {} Propagation: {} Loss: {} Optimization: {}".format(loading, propogation, get_loss, optim_tm))

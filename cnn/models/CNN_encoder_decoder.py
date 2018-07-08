@@ -16,6 +16,7 @@ class cnn_encoder_decoder(nn.Module):
         self.variational = variational(params)
         self.classifier = classifier(params)
         self.decoder = cnn_decoder(params)
+        self.ce = torch.nn.CrossEntropyLoss()
         
     def forward(self, batch_x, batch_y, decoder_word_input, decoder_target):
         # ----------- Encode (X, Y) --------------------------------------------
@@ -24,8 +25,6 @@ class cnn_encoder_decoder(nn.Module):
         Y, H2 = self.classifier(H)
         cross_entropy_y = self.params.loss_fn(Y, batch_y)
 
-        torch.cuda.synchronize()
-        start = timer()
         z_mu, z_lvar = self.variational(H)
         kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_lvar) + z_mu**2 - 1. - z_lvar, 1))
         [batch_size, _] = z_mu.size()
@@ -38,10 +37,10 @@ class cnn_encoder_decoder(nn.Module):
         torch.cuda.synchronize()
         start = timer()
         X_sample = self.decoder.forward(decoder_input, z, H2)
+        torch.cuda.synchronize()
         print("Decoder Time: {}".format(timer()-start))
         X_sample = X_sample.view(-1, self.params.vocab_size)
-        print("Time for variational: {}".format(timer()-start))
-        cross_entropy = torch.nn.functional.cross_entropy(X_sample, decoder_target)
+        cross_entropy = self.ce(X_sample, decoder_target)
 
         # X_sample = self.decoder.forward(decoder_input, z, batch_y) # Supervised loss on encoder
         # X_sample = X_sample.view(-1, self.params.vocab_size)
@@ -52,9 +51,17 @@ class cnn_encoder_decoder(nn.Module):
         loss = cross_entropy + kl_loss + cross_entropy_y# + cross_entropy_y_act
         return loss.view(-1,1)
 
-# Times: Loading: 0.00471496582031 Propagation: 1.57417678833 Loss: 0.00685596466064 Optimization: 0.00275301933289
-# Times: Loading: 0.00505685806274 Propagation: 0.00342202186584 Loss: 0.00170612335205 Optimization: 0.000565052032471
-# Times: Loading: 0.00346422195435 Propagation: 0.00313901901245 Loss: 0.000901937484741 Optimization: 0.000573873519897
-# Times: Loading: 0.00344896316528 Propagation: 0.00313091278076 Loss: 0.000900983810425 Optimization: 0.000573873519897
-# Times: Loading: 0.00345206260681 Propagation: 0.00329184532166 Loss: 0.000904083251953 Optimization: 0.000581026077271
-# Times: Loading: 0.00344276428223 Propagation: 0.0031270980835 Loss: 0.000897884368896 Optimization: 0.000609874725342
+# Time taken in layer 0 in decoder is 0.00420188903809
+# Time taken in layer 1 in decoder is 0.00259590148926
+# Time taken in layer 2 in decoder is 0.00290894508362
+# FC Layer in Decoder: 0.040727853775
+# Times are s1:-6.91413879395e-06 s2:-4.50611114502e-05 sx:-1.90734863281e-05 sx2:0 s3:0 s4:-0.000598907470703 s5:-0.00104999542236 s6:-0.000545978546143 s7:-1.90734863281e-05
+# Decoder Time: 0.0527701377869
+# Times: Loading: 0.00157809257507 Propagation: 0.0669059753418 Loss: 0.109215974808 Optimization: 0.00588798522949
+
+# Times: Loading: 0.00470304489136 Propagation: 1.59442305565 Loss: 0.0100197792053 Optimization: 0.00501489639282
+# Times: Loading: 0.00396990776062 Propagation: 0.00341200828552 Loss: 0.00487303733826 Optimization: 0.00326704978943
+# Times: Loading: 0.00217700004578 Propagation: 0.00312519073486 Loss: 0.00459885597229 Optimization: 0.00327587127686
+# Times: Loading: 0.00158286094666 Propagation: 0.00313401222229 Loss: 0.00460696220398 Optimization: 0.00326299667358
+# Times: Loading: 0.00159096717834 Propagation: 0.00312399864197 Loss: 0.0046021938324 Optimization: 0.0032639503479
+# Times: Loading: 0.00157117843628 Propagation: 0.00312781333923 Loss: 0.00460696220398 Optimization: 0.00325918197632

@@ -29,35 +29,94 @@ class cnn_decoder(nn.Module):
         self.fc = nn.Linear(self.out_size, self.params.vocab_size)
         weights_init(self.fc.weight)
         
+    # def forward(self, decoder_input, z, batch_y):
+    #     [batch_size, seq_len, _] = decoder_input.size()
+    #     z = torch.cat([z, batch_y], 1)
+    #     z = z.view(batch_size, 1,self.params.Z_dim + self.params.H_dim)
+    #     z = z.expand(-1,seq_len,-1)
+    #     x = torch.cat([decoder_input, z], 2)
+    #     x = x.transpose(1, 2).contiguous()
+    #     # if(self.params.dropouts):
+    #     #     x = self.drp(x)
+    #     torch.cuda.synchronize()
+    #     start = timer()
+    #     for layer in range(len(self.params.decoder_kernels)):
+    #         x = self.conv_layers[layer](x)
+    #         x_width = x.size()[2]
+    #         x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
+    #         x = self.relu(x)
+    #         print("Time taken in layer {} in decoder is {}".format(layer,timer()-start))
+    #         torch.cuda.synchronize()
+    #         start  =  timer()
+    #         # x = self.bn_x[layer](x)
+    #         # if(self.params.dropouts):
+    #         #     x = self.drp_7(x)
+        
+    #     x = x.transpose(1, 2).contiguous()
+    #     if(self.params.multi_gpu):
+    #         x = x.cuda(2)
+    #         x = self.fc(x)#.cuda(1)
+    #     else:
+    #         x = self.fc(x)
+    #     print("FC Layer in Decoder: {}".format(timer()- start))
+    #     x = x.view(-1, seq_len, self.params.vocab_size)
+    #     return x
+
     def forward(self, decoder_input, z, batch_y):
+        torch.cuda.synchronize()
+        s1 = timer()
         [batch_size, seq_len, _] = decoder_input.size()
+        torch.cuda.synchronize()
+        s1 = s1 - timer()
+        s2 = timer()
         z = torch.cat([z, batch_y], 1)
+        torch.cuda.synchronize()
+        s2 = s2 - timer()
+        sx = timer()
         z = z.view(batch_size, 1,self.params.Z_dim + self.params.H_dim)
         z = z.expand(-1,seq_len,-1)
+        torch.cuda.synchronize()
+        sx = sx - timer()
+        sx2 = 0#timer()
+        s3 = 0
+        s4 = timer()
         x = torch.cat([decoder_input, z], 2)
+        torch.cuda.synchronize()
+        s4 = s4 - timer()
+        s5 = timer()
         x = x.transpose(1, 2).contiguous()
+        torch.cuda.synchronize()
+        s5 = s5 - timer()
         # if(self.params.dropouts):
         #     x = self.drp(x)
-        torch.cuda.synchronize()
         start = timer()
         for layer in range(len(self.params.decoder_kernels)):
             x = self.conv_layers[layer](x)
             x_width = x.size()[2]
             x = x[:, :, :(x_width - self.params.decoder_paddings[layer])].contiguous()
             x = self.relu(x)
-            print("Time taken in layer {} in decoder is {}".format(layer,timer()-start))
             torch.cuda.synchronize()
+            print("Time taken in layer {} in decoder is {}".format(layer,timer()-start))
             start  =  timer()
             # x = self.bn_x[layer](x)
             # if(self.params.dropouts):
             #     x = self.drp_7(x)
         
+        s6 = timer()
         x = x.transpose(1, 2).contiguous()
+        torch.cuda.synchronize()
+        s6 = s6 - timer()
+        start = timer()
         if(self.params.multi_gpu):
             x = x.cuda(2)
             x = self.fc(x)#.cuda(1)
         else:
             x = self.fc(x)
+        torch.cuda.synchronize()
         print("FC Layer in Decoder: {}".format(timer()- start))
+        s7 = timer()
         x = x.view(-1, seq_len, self.params.vocab_size)
+        torch.cuda.synchronize()
+        s7 = s7 - timer()
+        print("Times are s1:{} s2:{} sx:{} sx2:{} s3:{} s4:{} s5:{} s6:{} s7:{}".format(s1, s2, sx, sx2, s3, s4, s5, s6, s7))
         return x
