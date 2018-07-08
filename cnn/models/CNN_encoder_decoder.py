@@ -51,6 +51,6 @@ class cnn_encoder_decoder(nn.Module):
             sys.exit()
 
         # since cross enctropy is averaged over seq_len, it is necessary to approximate new kld
-        loss = self.params.seq_len*cross_entropy + kl_loss + cross_entropy_y# + cross_entropy_y_act
+        loss = self.params.sequence_length*cross_entropy + kl_loss + cross_entropy_y# + cross_entropy_y_act
         return loss.view(-1,1), kl_loss.view(-1,1), cross_entropy.view(-1,1), cross_entropy_y.view(-1,1)#, cross_entropy_y_act.view(-1,1)
         # return cross_entropy_y.view(-1,1)
