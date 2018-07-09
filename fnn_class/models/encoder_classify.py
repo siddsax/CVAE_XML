@@ -52,8 +52,6 @@ class encoder(torch.nn.Module):
         #     sys.exit()
         o = self.bn(o)
         o_ = self.mu(o)
-        # o_ = nn.functional.sigmoid(o_)
-        # o__ = 0
         o__ = self.var(o)
         if(torch.isnan(o__).any()):
             print(torch.isnan(inputs).any())

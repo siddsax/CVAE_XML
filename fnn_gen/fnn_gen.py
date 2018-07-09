@@ -9,7 +9,7 @@ parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do
 parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
-parser.add_argument('--lr', dest='lr', type=float, default=1e-3, help='Learning Rate')
+parser.add_argument('--lr', dest='lr', type=float, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=10000, help='step for displaying loss')
 parser.add_argument('--b', dest='beta', type=float, default=1.0, help='factor multipied to likelihood param')
@@ -22,11 +22,23 @@ parser.add_argument('--te', dest='testing', type=int, default=0, help='model nam
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--loss', dest='loss_type', type=str, default="L1Loss", help='model name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="ReLU", help='model name')
-parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='2 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--clip', dest='clip', type=float, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
 
 # parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
-
 params = parser.parse_args()
+
+# x_tr = x_tr[0:20]
+# y_tr = y_tr[0:20]
+
+# labels = np.argwhere(np.sum(y_tr, axis=0)>0)
+# lbl = [label[0] for label in labels]
+# y_tr = y_tr[:,lbl]
+# y_te = y_te[:,lbl]
+# np.save('small_ytr', y_tr)
+
+
+
 # --------------------------------------------------------------------------------------------------------------
 if(len(params.model_name)==0):
     params.model_name = "Gen_data_Z_dim-{}_mb_size-{}_h_dim-{}_preproc-{}_beta-{}_final_ly-{}_loss-{}".format(params.Z_dim, params.mb_size, \

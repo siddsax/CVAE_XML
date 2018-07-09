@@ -47,7 +47,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             recon_loss = loss.data
             # kl_epch += kl_loss
             recon_epch += recon_loss
-            if it % int(num_mb/3) == 0:
+            if it % int(num_mb/12) == 0:
                 if(loss<loss_best2):
                     loss_best2 = loss
                     if not os.path.exists('saved_models/' + params.model_name ):
@@ -61,18 +61,18 @@ def train(x_tr, y_tr, x_te, y_te, params):
                 loss, loss_best2))#kl_loss, kl_b, recon_loss, lk_b, loss_best2))
                 # loss, kl_loss, kl_b, recon_loss, lk_b, loss_best2))
             # ------------------------ Propogate loss -----------------------------------
-            if(params.disp_flg):
-                losses_now = [loss.data[0]]#, kl_loss, recon_loss]
-                if(it2==0):
-                        losses = losses_update(losses_now)
-                else:
-                        # print(losses)
-                        for j in range(len(losses)):
-                            viz.line(X=np.linspace(it2-1,it2,50), Y=np.linspace(losses[j], losses_now[j],50),name=str(j), update='append', win=win)
-                        losses = losses_update(losses_now, losses)
-                if(it2 % 100 == 0 ):
-                        win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
-                it2 += 1
+                if(params.disp_flg):
+                    losses_now = [loss.data[0]]#, kl_loss, recon_loss]
+                    if(it2==0):
+                            losses = losses_update(losses_now)
+                    else:
+                            # print(losses)
+                            for j in range(len(losses)):
+                                viz.line(X=np.linspace(it2-1,it2,50), Y=np.linspace(losses[j], losses_now[j],50),name=str(j), update='append', win=win)
+                            losses = losses_update(losses_now, losses)
+                    if(it2 % 100 == 0 ):
+                            win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
+                    it2 += 1
             
             
             

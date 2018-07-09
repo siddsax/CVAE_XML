@@ -53,25 +53,27 @@ def train(x_tr, y_tr, params):
                 print('Loss: {:.4}; KL-loss: {:.4} ({}); recons_loss: {:.4} ({}); best_loss: {:.4};'.format(\
                 loss.data, kl_loss.data, kl_b, recon_loss.data, lk_b, loss_best2))
             # -------------------------------------------------------------------------------------------------------------- 
-                if(params.disp_flg):
-                    losses_now = [loss.data[0]]#, kl_loss, recon_loss]
-                    if(it2==0):
-                            losses = losses_update(losses_now)
-                    else:
-                            # print(losses)
-                            for j in range(len(losses)):
-                                viz.line(X=np.linspace(it2-1,it2,50), Y=np.linspace(losses[j], losses_now[j],50),name=str(j), update='append', win=win)
-                            losses = losses_update(losses_now, losses)
-                    if(it2 % 100 == 0 ):
-                        win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
-                    it2 = it2 + 1
+            if(params.disp_flg):
+                losses_now = [loss.data[0]]#, kl_loss, recon_loss]
+                if(it2==0):
+                        losses = losses_update(losses_now)
+                else:
+                        # print(losses)
+                        for j in range(len(losses)):
+                            viz.line(X=np.linspace(it2-1,it2,50), Y=np.linspace(losses[j], losses_now[j],50),name=str(j), update='append', win=win)
+                        losses = losses_update(losses_now, losses)
+                if(it2 % 100 == 0 ):
+                    win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
+                it2 = it2 + 1
             
             # ------------------------ Propogate loss -----------------------------------
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
+            optimizer.step()
             del loss
-            for p in model.parameters():
-                if p.grad is not None:
-                    p.data.add_(-params.lr, p.grad.data)
+            # for p in model.parameters():
+            #     if p.grad is not None:
+            #         p.data.add_(-params.lr, p.grad.data)
             optimizer.zero_grad()
             # ----------------------------------------------------------------------------
         
