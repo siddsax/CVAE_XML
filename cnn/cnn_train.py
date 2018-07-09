@@ -41,10 +41,11 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 	optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=params.lr)
 	if(len(params.load_model)):
 		print(params.load_model)
-		checkpoint = torch.load(params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage)
+		checkpoint = torch.load(params.load_model + "/model_best_batch")#, map_location=lambda storage, loc: storage)
 		model.load_state_dict(checkpoint['state_dict'])
 		optimizer.load_state_dict(checkpoint['optimizer'])
 		init = checkpoint['epoch']
+		del checkpoint
 	else:
 		init = 0
 
