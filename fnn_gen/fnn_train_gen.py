@@ -1,4 +1,10 @@
 from header import *
+def losses_update(list_of_losses, losses=None):
+        if(losses is None):
+                losses = np.zeros(len(list_of_losses))
+        for i in range(len(list_of_losses)):
+                losses[i] = list_of_losses[i]
+        return losses
 
 def train(x_tr, y_tr, params):
     viz = Visdom()
@@ -22,7 +28,7 @@ def train(x_tr, y_tr, params):
 
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
-
+    it2 = 0
     for epoch in range(params.num_epochs):
         kl_epch = 0
         recon_epch = 0
@@ -31,8 +37,10 @@ def train(x_tr, y_tr, params):
             loss, kl_loss, recon_loss, x_pred = model(X, Y)
 
             #  --------------------- Print and plot  -------------------------------------------------------------------
-            kl_epch += kl_loss.data
-            recon_epch += recon_loss.data
+            kl_loss = kl_loss.data
+            recon_loss = recon_loss.data
+            kl_epch += kl_loss
+            recon_epch += recon_loss
             
             if it % int(num_mb/6) == 0:
                 if(loss<loss_best2):
@@ -45,6 +53,18 @@ def train(x_tr, y_tr, params):
                 print('Loss: {:.4}; KL-loss: {:.4} ({}); recons_loss: {:.4} ({}); best_loss: {:.4};'.format(\
                 loss.data, kl_loss.data, kl_b, recon_loss.data, lk_b, loss_best2))
             # -------------------------------------------------------------------------------------------------------------- 
+                if(params.disp_flg):
+                    losses_now = [loss.data[0]]#, kl_loss, recon_loss]
+                    if(it2==0):
+                            losses = losses_update(losses_now)
+                    else:
+                            # print(losses)
+                            for j in range(len(losses)):
+                                viz.line(X=np.linspace(it2-1,it2,50), Y=np.linspace(losses[j], losses_now[j],50),name=str(j), update='append', win=win)
+                            losses = losses_update(losses_now, losses)
+                    if(it2 % 100 == 0 ):
+                        win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
+                    it2 = it2 + 1
             
             # ------------------------ Propogate loss -----------------------------------
             loss.backward()
@@ -73,12 +93,12 @@ def train(x_tr, y_tr, params):
                 os.makedirs('saved_models/' + params.model_name)
             torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_"+ str(epoch))
         
-        if(params.disp_flg):
-            if(epoch==0):
-                loss_old = loss_epch
-            else:
-                viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
-                loss_old = loss_epch
-            if(epoch % 100 == 0 ):
-                win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
+        # if(params.disp_flg):
+        #     if(epoch==0):
+        #         loss_old = loss_epch
+        #     else:
+        #         viz.line(X=np.linspace(epoch-1,epoch,50), Y=np.linspace(loss_old, loss_epch,50), name='1', update='append', win=win)
+        #         loss_old = loss_epch
+        #     if(epoch % 100 == 0 ):
+        #         win = viz.line(X=np.arange(epoch, epoch + .1), Y=np.arange(0, .1))
         # --------------------------------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 from header import *
 from cnn_test import *
 from timeit import default_timer as timer
+import os
 
 # ---------------------------------------------------------------------------------
 def losses_update(list_of_losses, losses=None):
@@ -39,9 +40,9 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 	print("Num Parameters : Encoder {} Classifier {} Variational {} Decoder {}".format(count_parameters(model.encoder), count_parameters(model.classifier), count_parameters(model.variational), count_parameters(model.decoder)))
 
 	optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=params.lr)
-	if(len(params.load_model)):
+	if(len(params.load_model) and os.path.exists(params.load_model + "/model_best_batch")):
 		print(params.load_model)
-		checkpoint = torch.load(params.load_model + "/model_best_batch", map_location=lambda storage, loc: storage)
+		checkpoint = torch.load(params.load_model + "/model_best_batch")#, map_location=lambda storage, loc: storage)
 		model.load_state_dict(checkpoint['state_dict'])
 		optimizer.load_state_dict(checkpoint['optimizer'])
 		init = checkpoint['epoch']
@@ -110,9 +111,8 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 				if(i==0):
 					losses = losses_update(losses_now)
 				else:
-					# print(losses)
-					for j in range(len(losses)):
-						viz.line(X=np.linspace(i-1,i,50), Y=np.linspace(losses[j], losses_now[j],50), update='append', win=win)
+					for i in range(len(losses)):
+						viz.line(X=np.linspace(i-1,i,50), Y=np.linspace(losses[i], losses_now[i],50), name=str(i), update='append', win=win)
 					losses = losses_update(losses_now, losses)
 				if(i % 1000 == 0 ):
 					win = viz.line(X=np.arange(i, i + .1), Y=np.arange(0, .1))
@@ -131,14 +131,14 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 					sm += p.grad.view(-1).shape[0]
 					sm2 = p.grad.mean().squeeze()*p.grad.view(-1).shape[0]
 			avg_grad = (sm2/sm).data[0]
-			optimizer.step()
-			# if(torch.__version__ == '0.4.0'):
-			#         torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
-			# else:
-			#         torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
-			# for p in model.parameters():
-			#         if(p.grad is not None):
-			#             p.data.add_(-params.lr, p.grad.data)
+			# optimizer.step()
+			if(torch.__version__ == '0.4.0'):
+					torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
+			else:
+					torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+			for p in model.parameters():
+					if(p.grad is not None):
+							p.data.add_(-params.lr, p.grad.data)
 			optimizer.zero_grad()
 			# ----------------------------------------------------------------------------
 			# if(epoch==0):

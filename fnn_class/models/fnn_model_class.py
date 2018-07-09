@@ -1,5 +1,6 @@
 from header import *
-
+import math
+import pdb
 class fnn_model_class(nn.Module):
     def __init__(self, params):
         super(fnn_model_class, self).__init__()
@@ -16,7 +17,7 @@ class fnn_model_class(nn.Module):
         # ---------------------------------------------------------------
         
         # ----------- Decode (X, z) --------------------------------------------
-        Y_sample = self.decoder.forward(z) 
+        Y_sample = self.decoder.forward(z_mu) 
         recon_loss = self.params.loss_fn(Y_sample, batch_y)
         # ------------------ Check for Recon Loss ----------------------------
         if(recon_loss<0):
@@ -27,14 +28,18 @@ class fnn_model_class(nn.Module):
         # ---------------------------------------------------------------------
         if(math.isnan(kl_loss)):
             print(z_var)
+            # print(np.max(z_var))
+            pdb.set_trace()
             sys.exit()
         if(math.isnan(recon_loss)):
             print("------======----------")
-            sys.exit()
+            pdb.set_trace()
         # ------------ Loss --------------------------------------------------
-        loss = self.params.beta*recon_loss + kl_loss
+        loss = recon_loss + kl_loss
+        # loss = self.params.beta*recon_loss + kl_loss
         # --------------------------------------------------------------------
 
         # return loss.view(-1,1), kl_loss.view(-1,1), recon_loss.view(-1,1)
-        return loss, kl_loss, recon_loss
+        # return loss, kl_loss, recon_loss
+        return loss
     
