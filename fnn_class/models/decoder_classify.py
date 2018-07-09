@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
 from torch.autograd import Variable
+from weights_init import weights_init
 # from pycrayon import CrayonClient
 
 class decoder(torch.nn.Module):
@@ -26,8 +27,8 @@ class decoder(torch.nn.Module):
         elif(params.fin_layer == "None"):
             self.l3 = ""
 
-        torch.nn.init.xavier_uniform_(self.l0.weight)
-        torch.nn.init.xavier_uniform_(self.l2.weight)
+        weights_init(self.l0.weight)
+        weights_init(self.l2.weight)
 
         # self.cc = CrayonClient(hostname="localhost")
         # self.summary = self.cc.create_experiment(type(self).__name__)

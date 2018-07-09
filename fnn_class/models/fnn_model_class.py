@@ -17,10 +17,10 @@ class fnn_model_class(nn.Module):
         # ---------------------------------------------------------------
         
         # ----------- Decode (X, z) --------------------------------------------
-        Y_sample = self.decoder.forward(z)
+        Y_sample = self.decoder.forward(z_mu)
         recon_loss = self.params.loss_fn(Y_sample, batch_y)
         # ------------------ Check for Recon Loss ----------------------------
-        if(recon_loss<0):
+        if(recon_loss.data[0]<0):
             print(recon_loss)
             print(Y_sample[0:100])
             print(batch_y[0:100])

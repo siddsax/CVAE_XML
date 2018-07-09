@@ -1,5 +1,7 @@
 from header import *
 import pdb
+from weights_init import weights_init
+
 class encoder(torch.nn.Module):
 
     def __init__(self, params):
@@ -19,9 +21,9 @@ class encoder(torch.nn.Module):
         self.mu = nn.Linear(params.h_dim, params.Z_dim, bias=True)
         self.var = nn.Linear(params.h_dim, params.Z_dim, bias=True)
         
-        torch.nn.init.xavier_uniform_(self.l0.weight)
-        torch.nn.init.xavier_uniform_(self.mu.weight)
-        torch.nn.init.xavier_uniform_(self.var.weight)
+        weights_init(self.l0.weight)
+        weights_init(self.mu.weight)
+        weights_init(self.var.weight)
         # self.cc = CrayonClient(hostname="localhost")
         # self.summary = self.cc.create_experiment(type(self).__name__)
 
@@ -29,11 +31,11 @@ class encoder(torch.nn.Module):
     def forward(self, inputs):
         
         o = self.l0(inputs)
-        if(torch.isnan(o).any()):
-            print(torch.isnan(inputs).any())
-            print(torch.isnan(o).any())
-            print("Boobs")
-            sys.exit()
+        # if(torch.isnan(o).any()):
+        #     print(torch.isnan(inputs).any())
+        #     print(torch.isnan(o).any())
+        #     print("Boobs")
+        #     sys.exit()
         o = self.l1(o)
         # o = self.l5(o)
         # o = self.l1(o)
@@ -53,10 +55,10 @@ class encoder(torch.nn.Module):
         o = self.bn(o)
         o_ = self.mu(o)
         o__ = self.var(o)
-        if(torch.isnan(o__).any()):
-            print(torch.isnan(inputs).any())
-            print(torch.isnan(o_).any())
-            print(torch.isnan(o__).any())
-            print("Boobs")
-            sys.exit()
+        # if(torch.isnan(o__).any()):
+        #     print(torch.isnan(inputs).any())
+        #     print(torch.isnan(o_).any())
+        #     print(torch.isnan(o__).any())
+        #     print("Boobs")
+        #     sys.exit()
         return o_, o__

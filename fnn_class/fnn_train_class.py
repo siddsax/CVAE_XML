@@ -48,8 +48,8 @@ def train(x_tr, y_tr, x_te, y_te, params):
             # kl_epch += kl_loss
             recon_epch += recon_loss
             if it % int(num_mb/12) == 0:
-                if(loss<loss_best2):
-                    loss_best2 = loss
+                if(loss.data[0]<loss_best2):
+                    loss_best2 = loss.data[0]
                     if not os.path.exists('saved_models/' + params.model_name ):
                         os.makedirs('saved_models/' + params.model_name)
                     torch.save(model.state_dict(), "saved_models/" + params.model_name + "/model_best")
@@ -58,7 +58,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
                     # kl_b = kl_loss
                 # print('Loss: {:.4}; KL-loss: {:.4} ({}); recons_loss: {:.4} ({}); best_loss: {:.4}'.format(\
                 print('Loss: {:.4}; best_loss: {:.4}'.format(\
-                loss, loss_best2))#kl_loss, kl_b, recon_loss, lk_b, loss_best2))
+                loss.data[0], loss_best2))#kl_loss, kl_b, recon_loss, lk_b, loss_best2))
                 # loss, kl_loss, kl_b, recon_loss, lk_b, loss_best2))
             # ------------------------ Propogate loss -----------------------------------
                 if(params.disp_flg):
@@ -78,7 +78,7 @@ def train(x_tr, y_tr, x_te, y_te, params):
             
             loss.backward()
             del loss
-            torch.nn.utils.clip_grad_norm_(model.parameters(), params.clip)
+            torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
             # for p in model.parameters():
             #     p.data.add_(-params.lr, p.grad.data)
             optimizer.step()
