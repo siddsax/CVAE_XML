@@ -21,7 +21,9 @@ def isnan(x):
 class loss:
 
     def MSLoss(self, X_sample, X):
-        t = torch.mean(torch.norm((X_sample - X),1),dim=0) 
+        x = (X_sample - X)
+        t = torch.mean(torch.sum(x*x,dim=1))
+        # t = torch.mean(torch.norm((X_sample - X),1),dim=0) 
         return t
     
     def BCELoss(self, y_pred, y, eps = 1e-25):
@@ -39,5 +41,5 @@ class loss:
         return t
     
     def L1Loss(self, X_sample, X):
-        t = torch.sum(torch.mean(torch.abs(X_sample - X),dim=0))
+        t = torch.mean(torch.sum(torch.abs(X_sample - X),dim=1))
         return t
