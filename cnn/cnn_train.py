@@ -51,7 +51,7 @@ def train(x_tr, y_tr, x_te, y_te, x_20, y_20, embedding_weights, params, decoder
 	print('Boom 5')
 	print(num_mb)
 	# =============================== TRAINING ====================================
-	for epoch in range(params.num_epochs):
+	for epoch in range(init,params.num_epochs):
 		kl_epch = 0.0
 		recon_epch = 0.0
 		cey_epch = 0.0

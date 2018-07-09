@@ -35,17 +35,31 @@ if(len(params.model_name)==0):
 print('Saving Model to: ' + params.model_name)
 # ------------------ data ----------------------------------------------
 print('Boom 0')
-if(params.data_set=="Wiki"):
     x_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/x.npz') # Prepocessed
     y_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/y.npz')
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz')
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz')
-elif(params.data_set=="Eurlex"):
+    x_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/x.npz').dense() # Prepocessed
+    y_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/y.npz').dense()
+    x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz').dense()
+    y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz').dense()
+ elif(params.data_set=="Eurlex"):
     x_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/x.npz') # Prepocessed
     y_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/y.npz')
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/tx.npz')
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/ty.npz')
-# ----------------------------------------------------------------------
+    x_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/x.npz').dense() # Prepocessed
+    y_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/y.npz').dense()
+    x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/tx.npz').dense()
+    y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/ty.npz').dense()
+ # ----------------------------------------------------------------------
+ 
+x_tr = x_tr[0:20]
+y_tr = y_tr[0:20]
+
+labels = np.argwhere(np.sum(y_tr, axis=0)>0)
+y_tr = y_tr[:,labels]
+y_te = y_te[:,labels]
 
 # -------------------------- PP -------------------------------------------
 if(params.pp_flg):
