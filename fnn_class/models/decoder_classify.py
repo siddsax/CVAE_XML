@@ -18,6 +18,7 @@ class decoder(torch.nn.Module):
         self.l0 = nn.Linear(params.Z_dim, params.h_dim, bias=True)
         self.l1 = nn.ReLU()
         self.bn = nn.BatchNorm1d(params.h_dim)
+        self.drp = nn.Dropout(.5)
         self.l2 = nn.Linear(params.h_dim, params.y_dim, bias=True)
 
         if(params.fin_layer == "Sigmoid"):
@@ -30,13 +31,11 @@ class decoder(torch.nn.Module):
         weights_init(self.l0.weight)
         weights_init(self.l2.weight)
 
-        # self.cc = CrayonClient(hostname="localhost")
-        # self.summary = self.cc.create_experiment(type(self).__name__)
-
     def forward(self, inputs):
         
         o = self.l0(inputs)
         o = self.l1(o)
+        o = self.drp(o)
         o = self.bn(o)
         o = self.l2(o)
         if(type(self.l3)!=str):

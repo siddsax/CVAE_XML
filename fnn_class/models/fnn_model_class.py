@@ -40,6 +40,6 @@ class fnn_model_class(nn.Module):
         # --------------------------------------------------------------------
 
         # return loss.view(-1,1), kl_loss.view(-1,1), recon_loss.view(-1,1)
-        # return loss, kl_loss, recon_loss
-        return loss
+        return loss, kl_loss, recon_loss
+        # return loss
     
