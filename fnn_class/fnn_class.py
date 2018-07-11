@@ -10,7 +10,7 @@ parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do
 parser.add_argument('--zd', dest='Z_dim', type=int, default=100, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
-parser.add_argument('--hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
+parser.add_argument('--Hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=float, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=10000, help='step for displaying loss')
@@ -118,8 +118,9 @@ if(params.pp_flg):
 print('Boom 2')
 
 # -----------------------  Loss ------------------------------------
-params.loss_fn = getattr(loss(), params.loss_type)
-print(params.loss_type)
+# params.loss_fn = getattr(loss(), params.loss_type)
+params.loss_fns = loss()
+# print(params.loss_type)
 # -----------------------------------------------------------------
 params.X_dim = x_tr.shape[1]
 params.y_dim = y_tr.shape[1]

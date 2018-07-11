@@ -44,18 +44,17 @@ class loss:
         t = torch.mean(torch.sum(torch.abs(X_sample - X),dim=1))
         return t
 
-    def kl_loss(self, z_mean, z_log_var):
+    def kl(self, z_mean, z_log_var):
         kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_log_var) + z_mean**2 - 1. - z_log_var, 1))
         
         return torch.mean(kl_loss)
 
     def logxy_loss(self, x, x_decoded_mean, params):
-        # x = K.flatten(x)
-        # x_decoded_mean = K.flatten(x_decoded_mean)
-        xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
+        # xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
+        xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
     
         # p(y) for observed data is equally distributed
-        logy = torch.log(1. / params.y_dim)
+        logy = torch.from_numpy(np.array([np.log(1. / params.y_dim)])).type(params.dtype)
         
         return xent_loss - logy
 
@@ -63,8 +62,8 @@ class loss:
         alpha = 0.1 * params.N
         return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)
 
-    def unlabeled_vae_loss(x, x_decoded_mean):
-        entropy = metrics.categorical_crossentropy(_y_output, _y_output)
-        labeled_loss = logxy_loss(x, x_decoded_mean) + kl_loss(x, x_decoded_mean)
+    # def unlabeled_vae_loss(self,x, x_decoded_mean):
+    #     entropy = metrics.categorical_crossentropy(_y_output, _y_output)
+    #     labeled_loss = logxy_loss(x, x_decoded_mean) + kl(x, x_decoded_mean)
         
-        return K.mean(K.sum(_y_output * labeled_loss, axis=-1)) + entropy
+    #     return K.mean(K.sum(_y_output * labeled_loss, axis=-1)) + entropy

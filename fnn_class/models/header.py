@@ -19,7 +19,7 @@ import argparse
 from visdom import Visdom
 from sklearn.externals import joblib 
 from futils import *
-from loss import loss
+from loss import *
 from fnn_test_class import test
 from fnn_train_class import train
 import sys

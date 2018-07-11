@@ -16,11 +16,11 @@ class decoder(torch.nn.Module):
         
         super(decoder, self).__init__()
         self.l0 = nn.Linear(params.y_dim, params.h_dim, bias=True)
-        self.l1 = nn.Linear(params.Z_dim, params.h_dim, bias=True)
-        self.l2 = nn.ReLU()
-        self.bn = nn.BatchNorm1d(params.h_dim)
+        self.l1 = nn.Linear(params.Z_dim + params.h_dim, params.h_dim, bias=True)
+        self.relu = nn.ReLU()
         self.drp = nn.Dropout(.5)
-        self.l3 = nn.Linear(params.h_dim, params.y_dim, bias=True)
+        self.bn = nn.BatchNorm1d(params.h_dim)
+        self.l2 = nn.Linear(params.h_dim, params.X_dim, bias=True)
 
         # if(params.fin_layer == "Sigmoid"):
         #     self.l3 = nn.Sigmoid()
@@ -31,18 +31,20 @@ class decoder(torch.nn.Module):
 
         weights_init(self.l0.weight)
         weights_init(self.l1.weight)
-        weights_init(self.l3.weight)
+        weights_init(self.l2.weight)
 
     def forward(self, z, y):
         
         o = self.l0(y)
-        o = torch.cat((o, z), dim=-1)
+        o = self.relu(o)
         o = self.drp(o)
-        o = self.l2(o)
+        o = torch.cat((o, z), dim=-1)
         o = self.l1(o)
         o = self.drp(o)
+        o = self.relu(o)
         o = self.bn(o)
         o = self.l2(o)
+        # o = self.drp(o)
         # if(type(self.l3)!=str):
         #     o = self.l3(o)
         
