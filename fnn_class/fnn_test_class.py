@@ -27,21 +27,20 @@ def test(x_te, y_te, params, model=None, best_test_loss=None):
 
     model.eval()
     X, Y = load_data(x_te, y_te, params, batch=False)
-    # Y_sample, loss = model_test(model, X, Y)
-    Y_sample, loss, kl_loss, recon_loss = model_test(model, X, Y)
+    loss, recon_loss, lkhood_xy, kl_loss, Y_sample, X_sample = model(X, Y, test=1)
 
     if(best_test_loss!=None):
         if(loss.data[0] < best_test_loss ):
             best_test_loss = loss.data[0]
         print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4};'.format(loss.data[0], \
-        -1.0, recon_loss.data[0], best_test_loss))
-        p = precision_k(y_te, Y_sample.data.cpu().numpy(), 5)
+        -1.0, recon_loss, best_test_loss))
+        p = precision_k(y_te, Y_sample, 5)
         # precision_k(y_te, Y_sample, 1)
         return best_test_loss, p
     else:
         print("==++==")
         # pdb.set_trace()
-        print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}'.format(loss.data[0], kl_loss.data[0], recon_loss.data[0], \
+        print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}'.format(loss.data[0], kl_loss, recon_loss, \
         ))
         precision_k(y_te, Y_sample.data.numpy(), 5)
         np.save('scores', Y_sample.data[0])

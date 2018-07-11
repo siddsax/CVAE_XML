@@ -10,6 +10,7 @@ parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do
 parser.add_argument('--zd', dest='Z_dim', type=int, default=100, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
 parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
+parser.add_argument('--hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=float, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=10000, help='step for displaying loss')
@@ -50,6 +51,8 @@ elif(params.data_set=="Eurlex"):
     y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
     x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
     y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
+
+    x_unl = None
 
  # ----------------------------------------------------------------------
  
@@ -129,7 +132,7 @@ else:
 # -----------------------------------------------------------------------------
 
 if(params.training and not params.testing):
-    train(x_tr, y_tr, x_te, y_te, params)
+    train(x_tr, y_tr, x_te, y_te, x_unl, params)
 elif(params.testing):
     # test(x_tr, y_tr, params)
     test(x_te, y_te, params)

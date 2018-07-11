@@ -49,6 +49,11 @@ def count_parameters(model):
 def effective_k(k, d):
     return (k - 1) * d + 1
 
+def save_model(model,params, name):
+    if not os.path.exists('saved_models/' + params.model_name ):
+        os.makedirs('saved_models/' + params.model_name)
+    torch.save(model.state_dict(), "saved_models/" + params.model_name + name)
+
 def sample_z(mu, log_var, params, dtype_f):
     eps = Variable(torch.randn(params.batch_size, params.Z_dim).type(dtype_f))
     k = torch.exp(log_var / 2) * eps
