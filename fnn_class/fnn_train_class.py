@@ -93,28 +93,28 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
         
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 
 
-        for i in range(len(losses)):
-            losses[i] /= losses[i]
-        if(losses[0]<best_epch_loss):
-            best_epch_loss = losses[0]
-            save_model(model,params, "/model_best")
-        out=""
-        print("="*50)            
-        for i in range(len(losses_new)):
-            out+= loss_names[i] + ":" + str(losses[i]) + " "
-        print(out)
+        # for i in range(len(losses)):
+        #     losses[i] /= num_mb
+        # if(losses[0]<best_epch_loss):
+        #     best_epch_loss = losses[0]
+        #     save_model(model,params, "/model_best")
+        # out=""
+        # print("="*50)            
+        # for i in range(len(losses_new)):
+        #     out+= loss_names[i] + ":" + str(losses[i]) + " "
+        # print(out)
         
-        best_test_loss,p_new = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
-        model.train()
+        # best_test_loss,p_new = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+        # model.train()
         
-        if(p_best[0]< p_new[0]):
-            p_best = p_new
-            print("====== New GOAT =====")
-            save_model(model,params, "/model_best_test")
+        # if(p_best[0]< p_new[0]):
+        #     p_best = p_new
+        #     print("====== New GOAT =====")
+        #     save_model(model,params, "/model_best_test")
             
-        out = ""
-        for i in range(len(p_best)):
-            out += str(i) + ":" + str(p_best[i]) + " "
-        print(out)
+        # out = ""
+        # for i in range(len(p_best)):
+        #     out += str(i) + ":" + str(p_best[i]) + " "
+        # print(out)
             
-        print("="*50)
+        # print("="*50)

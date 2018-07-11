@@ -19,11 +19,11 @@ class encoder(torch.nn.Module):
         
     def forward(self, inputs):
         
-        o = self.drp(inputs)
-        o = self.l0(o)
+        # o = self.drp(inputs)
+        o = self.l0(inputs)
         o = self.relu(o)
-        o = self.drp(o)
-        o = self.bn(o)
+        # o = self.drp(o)
+        # o = self.bn(o)
         o = self.l2(o)
         o = self.relu(o)
         return o
@@ -51,8 +51,8 @@ class classifier(torch.nn.Module):
         super(classifier, self).__init__()
         # self.l0 = nn.Linear(params.h_dim, params.H_dim, bias=True)
         self.l0 = nn.Linear(params.H_dim, params.y_dim, bias=True)
-        self.bn = nn.BatchNorm1d(params.y_dim)
-        self.drp = nn.Dropout(.5)
+        # self.bn = nn.BatchNorm1d(params.y_dim)
+        # self.drp = nn.Dropout(.5)
         
         weights_init(self.l0.weight)
         # weights_init(self.l1.weight)

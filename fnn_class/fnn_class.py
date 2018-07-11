@@ -56,14 +56,14 @@ elif(params.data_set=="Eurlex"):
 
  # ----------------------------------------------------------------------
  
-# x_tr = x_tr[0:20]
-# y_tr = y_tr[0:20]
+x_tr = x_tr[0:20]
+y_tr = y_tr[0:20]
 
-# labels = np.argwhere(np.sum(y_tr, axis=0)>0)
-# lbl = [label[0] for label in labels]
-# y_tr = y_tr[:,lbl]
-# y_te = y_te[:,lbl]
-# np.save('small_ytr', y_tr)
+labels = np.argwhere(np.sum(y_tr, axis=0)>0)
+lbl = [label[0] for label in labels]
+y_tr = y_tr[:,lbl]
+y_te = y_te[:,lbl]
+np.save('small_ytr', y_tr)
 
 # import matplotlib.pyplot as plt
 # import numpy as np

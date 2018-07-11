@@ -36,16 +36,13 @@ class decoder(torch.nn.Module):
     def forward(self, z, y):
         
         o = self.l0(y)
-        o = self.relu(o)
-        o = self.drp(o)
+        # o = self.relu(o)
+        # o = self.drp(o)
         o = torch.cat((o, z), dim=-1)
         o = self.l1(o)
-        o = self.drp(o)
-        o = self.relu(o)
-        o = self.bn(o)
-        o = self.l2(o)
         # o = self.drp(o)
-        # if(type(self.l3)!=str):
-        #     o = self.l3(o)
+        # o = self.relu(o)
+        # o = self.bn(o)
+        o = self.l2(o)
         
         return o

@@ -60,7 +60,7 @@ class loss:
 
     def cls_loss(self, y, y_pred, params):
         alpha = 0.1 * params.N
-        return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)
+        return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
 
     # def unlabeled_vae_loss(self,x, x_decoded_mean):
     #     entropy = metrics.categorical_crossentropy(_y_output, _y_output)
