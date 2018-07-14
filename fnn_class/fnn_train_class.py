@@ -53,9 +53,9 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     p_best = np.zeros(5)
     for epoch in range(init, params.num_epochs):
         logs = open("saved_models/" + params.model_name + "/logs.txt", 'a+')
-        alpha = min(1.0, epoch*1e-3)#0.0
-        kl_epch = 0
-        recon_epch = 0
+        # alpha = min(1.0, epoch*1e-3)#0.0
+        # kl_epch = 0
+        # recon_epch = 0
         for it in range(int(num_mb)):
             kt +=1
             X, Y = load_data(x_tr, y_tr, params)

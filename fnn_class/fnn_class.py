@@ -43,14 +43,14 @@ if(params.data_set=="Wiki"):
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz')#.dense()
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz')#.dense()
 elif(params.data_set=="Eurlex"):
-    # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')#.dense() # Prepocessed
-    # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')#.dense()
-    # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
-    # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
-    x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
-    y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
-    x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
-    y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
+    x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')#.dense() # Prepocessed
+    y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')#.dense()
+    x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
+    y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
+    # x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
+    # y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
+    # x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
+    # y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
 
     x_unl = None
 
