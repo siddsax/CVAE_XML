@@ -7,9 +7,9 @@ sys.dont_write_bytecode = True
 # ------------------------ Params -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
-parser.add_argument('--zd', dest='Z_dim', type=int, default=100, help='Latent layer dimension')
+parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
-parser.add_argument('--hd', dest='h_dim', type=int, default=600, help='hidden layer dimension')
+parser.add_argument('--hd', dest='h_dim', type=int, default=256, help='hidden layer dimension')
 parser.add_argument('--Hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
 parser.add_argument('--lr', dest='lr', type=float, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
@@ -17,7 +17,7 @@ parser.add_argument('--e', dest='num_epochs', type=int, default=10000, help='ste
 parser.add_argument('--b', dest='beta', type=float, default=1.0, help='factor multipied to likelihood param')
 parser.add_argument('--d', dest='disp_flg', type=int, default=0, help='display graphs')
 parser.add_argument('--sve', dest='save', type=int, default=1, help='save models or not')
-parser.add_argument('--ss', dest='save_step', type=int, default=100, help='gap between model saves')
+parser.add_argument('--ss', dest='save_step', type=int, default=500, help='gap between model saves')
 parser.add_argument('--mn', dest='model_name', type=str, default='', help='model name')
 parser.add_argument('--tr', dest='training', type=int, default=1, help='model name')
 parser.add_argument('--te', dest='testing', type=int, default=0, help='model name')
@@ -43,10 +43,10 @@ if(params.data_set=="Wiki"):
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz')#.dense()
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz')#.dense()
 elif(params.data_set=="Eurlex"):
-    # x_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/x.npz')#.dense() # Prepocessed
-    # y_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/y.npz')#.dense()
-    # x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/tx.npz')#.dense()
-    # y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/manik/ty.npz')#.dense()
+    # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')#.dense() # Prepocessed
+    # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')#.dense()
+    # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
+    # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
     x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
     y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
     x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
@@ -56,14 +56,14 @@ elif(params.data_set=="Eurlex"):
 
  # ----------------------------------------------------------------------
  
-x_tr = x_tr[0:20]
-y_tr = y_tr[0:20]
+# x_tr = x_tr[0:20]
+# y_tr = y_tr[0:20]
 
-labels = np.argwhere(np.sum(y_tr, axis=0)>0)
-lbl = [label[0] for label in labels]
-y_tr = y_tr[:,lbl]
-y_te = y_te[:,lbl]
-np.save('small_ytr', y_tr)
+# labels = np.argwhere(np.sum(y_tr, axis=0)>0)
+# lbl = [label[0] for label in labels]
+# y_tr = y_tr[:,lbl]
+# y_te = y_te[:,lbl]
+# np.save('small_ytr', y_tr)
 
 # import matplotlib.pyplot as plt
 # import numpy as np
@@ -112,10 +112,14 @@ if(params.pp_flg):
         pp = preprocessing.MinMaxScaler()
     elif(params.pp_flg==2):
         pp = preprocessing.StandardScaler()
-    scaler = pp.fit(x_tr)
+    if(x_unl is not None):
+        scaler = pp.fit(x_unl)
+        x_unl = scaler.transform(x_unl)    
+    else:
+        scaler = pp.fit(x_tr)
     x_tr = scaler.transform(x_tr)    
-    # x_te = scaler.transform(x_te)
-print('Boom 2')
+    x_te = scaler.transform(x_te)
+    print('Boom 2')
 
 # -----------------------  Loss ------------------------------------
 # params.loss_fn = getattr(loss(), params.loss_type)
@@ -139,3 +143,38 @@ elif(params.testing):
     test(x_te, y_te, params)
 else:
     dig(x_tr, y_tr, x_te, y_te, params)
+
+
+
+# fnn_model_class(
+#   (encoder): encoder(
+#     (l0): Linear(in_features=5000, out_features=256)
+#     (relu): ReLU()
+#     (drp): Dropout(p=0.5)
+#     (drp_1): Dropout(p=0.1)
+#     (bn): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True)
+#     (bn_1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True)
+#     (l2): Linear(in_features=256, out_features=512)
+#   )
+#   (decoder): decoder(
+#     (l0): Linear(in_features=3956, out_features=256)
+#     (l1): Linear(in_features=456, out_features=256)
+#     (relu): ReLU()
+#     (drp): Dropout(p=0.5)
+#     (bn): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True)
+#     (bn_1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True)
+#     (l2): Linear(in_features=256, out_features=5000)
+#     (drp_1): Dropout(p=0.1)
+#     (l3): Sigmoid()
+#   )
+#   (variational): variational(
+#     (mu): Linear(in_features=512, out_features=200)
+#     (var): Linear(in_features=512, out_features=200)
+#   )
+#   (classifier): classifier(
+#     (l0): Linear(in_features=512, out_features=3956)
+#     (bn): BatchNorm1d(3956, eps=1e-05, momentum=0.1, affine=True)
+#     (drp): Dropout(p=0.5)
+#     (l3): Sigmoid()
+#   )
+# )

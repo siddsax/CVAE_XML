@@ -11,4 +11,5 @@ word2vec_models/
 clusterings
 *.mat
 *.npy
+*.png
 useful_saved_data

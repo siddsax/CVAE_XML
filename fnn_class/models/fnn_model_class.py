@@ -17,7 +17,6 @@ class fnn_model_class(nn.Module):
         H = self.encoder(batch_x)
         z_mean, z_log_var = self.variational(H)
         Y_sample = self.classifier(H)
-        kl_loss = self.params.loss_fns.kl(z_mean, z_log_var)
         # ---------------------------------------------------------------
         # ----------- Decode (X, z) --------------------------------------------
         X_sample = self.decoder(z_mean, Y_sample)
@@ -25,10 +24,17 @@ class fnn_model_class(nn.Module):
         # ------------------ Check for Recon Loss ----------------------------
         if(batch_y is not None):
             recon_loss = self.params.loss_fns.cls_loss(batch_y, Y_sample, self.params)
-            loss = kl_loss + lkhood_xy + recon_loss
+            
+            if(test):
+                kl_loss = 0.0
+                loss = lkhood_xy + recon_loss
+            else:
+                kl_loss = self.params.loss_fns.kl(z_mean, z_log_var)
+                loss = kl_loss + lkhood_xy + recon_loss
+                kl_loss = kl_loss.data[0]
             recon_loss = recon_loss.data[0]
             lkhood_xy = lkhood_xy.data[0]
-            kl_loss = kl_loss.data[0]
+            
             if(test):
                 return loss, recon_loss, lkhood_xy, kl_loss, Y_sample.data.cpu().numpy(), X_sample.data.cpu().numpy()
             else:

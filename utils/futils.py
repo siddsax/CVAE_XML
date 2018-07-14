@@ -49,6 +49,13 @@ def count_parameters(model):
 def effective_k(k, d):
     return (k - 1) * d + 1
 
+def load_model(model, name):
+    checkpoint = torch.load(name)#, map_location=lambda storage, loc: storage)
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    init = checkpoint['epoch']
+
+    return model, optimizer, init
 def save_model(model,params, name):
     if not os.path.exists('saved_models/' + params.model_name ):
         os.makedirs('saved_models/' + params.model_name)
