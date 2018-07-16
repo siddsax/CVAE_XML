@@ -62,7 +62,7 @@ elif(params.data_set=="Eurlex"):
     # y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
 
     x_unl = None
-    x_unl = np.load('../datasets/Eurlex/manik/x_tr.npy')
+    # x_unl = np.load('../datasets/Eurlex/manik/x_tr.npy')
     if(x_unl is not None):
         params.ratio = 5
     else:

@@ -105,7 +105,7 @@ class classifier(torch.nn.Module):
         # ---------------------------------------------------------------        
         self.l2 = nn.Linear(params.h_dim, params.y_dim, bias=True)
         self.bn = nn.BatchNorm1d(params.y_dim)
-        
+        self.l3 = nn.Sigmoid()
         weights_init(self.l0.weight)
         weights_init(self.l1.weight)
         weights_init(self.l2.weight)
@@ -126,7 +126,7 @@ class classifier(torch.nn.Module):
         # ---------------------------------------
         o = self.drp_1(o) # added
         o = self.l2(o)
-
+        o = self.l3(o)
         # if(type(self.l3)!=str):
         return o
 
