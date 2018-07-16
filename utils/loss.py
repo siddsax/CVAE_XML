@@ -61,7 +61,7 @@ class loss:
         return b
     
     def cls_loss(self, y, y_pred, params):
-        alpha = 1.0
+        alpha = 0.1*params.N
         return alpha * torch.nn.functional.mse_loss(y_pred, y)*y.shape[-1]
 
     def ranking_mse_loss(self, y, y_pred, params):

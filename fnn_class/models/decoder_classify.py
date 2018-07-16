@@ -39,13 +39,13 @@ class decoder(torch.nn.Module):
         o = self.l0(y)
         # o = self.bn(o)
         o = self.relu(o)
-        o = self.drp_1(o)
+        # o = self.drp_1(o)
         #--------------------------------
         o = torch.cat((o, z), dim=-1)
         o = self.l1(o)
         # o = self.bn_1(o)
         o = self.relu(o)
-        o = self.drp_1(o)
+        # o = self.drp_1(o)
         # ------------------------------
         o = self.l2(o)
         # o = self.l3(o)
