@@ -48,6 +48,6 @@ class decoder(torch.nn.Module):
         o = self.drp_1(o)
         # ------------------------------
         o = self.l2(o)
-        o = self.l3(o)
+        # o = self.l3(o)
         
         return o

@@ -24,9 +24,10 @@ parser.add_argument('--te', dest='testing', type=int, default=0, help='model nam
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
-parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--pp', dest='pp_flg', type=int, default=2, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
 parser.add_argument('--loss', dest='loss_type', type=str, default="MSLoss", help='model name')
 parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient clipping')
+parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='train on labeled data')
 params = parser.parse_args()
 
 # --------------------------------------------------------------------------------------------------------------

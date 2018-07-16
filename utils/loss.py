@@ -50,60 +50,26 @@ class loss:
         return torch.mean(kl_loss)
 
     def logxy_loss(self, x, x_decoded_mean, params):
-        # xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
         xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
-    
-        # p(y) for observed data is equally distributed
         logy = Variable(torch.from_numpy(np.array([np.log(1. / params.y_dim)])).type(params.dtype))
         
         return xent_loss - logy
 
     def entropy(self, x):
         b = x*torch.log(x+1e-8) + (1-x)*torch.log(1-x+1e-8)
-
-        # b = torch.nn.functional.softmax(x, dim=-1) * torch.nn.functional.log_softmax(x, dim=-1)
         b = -1.0 * b.mean()*x.shape[-1]
-        # pdb.set_trace()
         return b
     
     def cls_loss(self, y, y_pred, params):
         alpha = 1.0
-        # alpha = 0.1 * params.N
         return alpha * torch.nn.functional.mse_loss(y_pred, y)*y.shape[-1]
-        # return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
-        # return alpha * torch.mean(torch.sum(torch.abs(y_pred - y),dim=1))
-        # return alpha * self.ranking_mse_loss(y, y_pred, params)
+
     def ranking_mse_loss(self, y, y_pred, params):
-        alpha = 0.1 * params.N
-
-        # x = torch.randn(10)
-        # y, ind = torch.sort(x, 1)
-        # unsorted = y.new(*y.size())
-        # unsorted.scatter_(1, ind, y)
-        # print((x - unsorted).abs().max())
-
         rank_mat = np.argsort(y_pred.data.cpu().numpy())
-        # rank_mat = np.argsort(y_pred)
-        # backup = np.copy(y_pred)
-        # for k in range(k):
         v1 = y_pred.clone()
         v2 = y.clone()
         for i in range(y_pred.shape[0]):
             for k in range(5):
                 v1[i,rank_mat[i, -(k+1)]] = ((k+1)**2)*y_pred[i,rank_mat[i, -(k+1)]].clone()
-                # y_pred[i,rank_mat[i, :-(k+1)]] = m
-                # m1 = 
                 v2[i, rank_mat[i, -(k+1)]] = ((k+1)**2)*y[i,rank_mat[i, -(k+1)]].clone()
         return torch.nn.functional.mse_loss(v1, v2)*y.shape[-1]
-        # y_pred = np.ceil(y_pred)
-        # kk = np.argwhere(y_pred>0)
-        # mat = np.multiply(y_pred, y)
-        # num = np.sum(mat,axis=1)
-        # p[k] = np.mean(num/(k+1))
-    # def unlabeled_vae_loss(self,x, x_decoded_mean):
-    #     entropy = metrics.categorical_crossentropy(_y_output, _y_output)
-    #     labeled_loss = logxy_loss(x, x_decoded_mean) + kl(x, x_decoded_mean)
-        
-    #     return K.mean(K.sum(_y_output * labeled_loss, axis=-1)) + entropy
-
-

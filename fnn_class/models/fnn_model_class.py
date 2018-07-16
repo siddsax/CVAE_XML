@@ -14,16 +14,13 @@ class fnn_model_class(nn.Module):
         
     def forward(self, batch_x, batch_y=None, test=0):
         # ----------- Encode (X, Y) --------------------------------------------
-        H = self.encoder(batch_x)
-        z_mean, z_log_var = self.variational(H)
+        z_mean, z_log_var = self.variational(batch_x)
         z = sample_z(z_mean, z_log_var, self.params)
         # ---------------------------------------------------------------
         # ----------- Decode (X, z) --------------------------------------------
         # ------------------ Check for Recon Loss ----------------------------
         if(batch_y is not None):
-            Y_sample = self.classifier(H)
-            # Y_sample = torch.nn.functional.sigmoid(Y_sample)
-
+            Y_sample = self.classifier(batch_x)
             X_sample = self.decoder(z, batch_y)
             lkhood_xy = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params)
             recon_loss = self.params.loss_fns.cls_loss(batch_y, Y_sample, self.params)
@@ -43,13 +40,10 @@ class fnn_model_class(nn.Module):
             else:
                 return loss, recon_loss, lkhood_xy, kl_loss
         else:
-            # Sofmaxization
-            Y_sample = self.classifier(H)
-            # Y_sample = torch.nn.functional.sigmoid(o)
+            Y_sample = self.classifier(batch_x)
             X_sample = self.decoder(z, Y_sample)
             lkhood_xy = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params)
 
-            # Y_sample = torch.nn.functional.softmax(o)
             entropy = self.params.loss_fns.entropy(Y_sample)
             if(test):
                 kl_loss = 0.0
@@ -58,7 +52,7 @@ class fnn_model_class(nn.Module):
                 kl_loss = self.params.loss_fns.kl(z_mean, z_log_var)
                 labeled_loss = kl_loss + lkhood_xy
                 kl_loss = kl_loss.data[0]
-            loss = labeled_loss + entropy
+            loss = labeled_loss #+ entropy
             # loss = torch.mean(torch.sum(Y_sample * labeled_loss, dim=-1)) + entropy
             entropy = entropy.data[0]
             labeled_loss = labeled_loss.data[0]

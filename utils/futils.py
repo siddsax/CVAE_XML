@@ -49,17 +49,26 @@ def count_parameters(model):
 def effective_k(k, d):
     return (k - 1) * d + 1
 
-def load_model(model, name):
+def load_model(model, name, optimizer=None):
     checkpoint = torch.load(name)#, map_location=lambda storage, loc: storage)
     model.load_state_dict(checkpoint['state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
-    init = checkpoint['epoch']
-
-    return model, optimizer, init
-def save_model(model,params, name):
+    
+    if optimizer is not None:
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        init = checkpoint['epoch']
+        return model, optimizer, init
+    else:
+        return model
+        
+def save_model(model, optimizer, epoch, params, name):
     if not os.path.exists('saved_models/' + params.model_name ):
         os.makedirs('saved_models/' + params.model_name)
-    torch.save(model.state_dict(), "saved_models/" + params.model_name + name)
+    checkpoint = {
+        'state_dict' : model.state_dict(),
+        'optimizer' : optimizer.state_dict(),
+        'epoch' : epoch 
+    }
+    torch.save(checkpoint, "saved_models/" + params.model_name + name)
 
 def sample_z(mu, log_var, params, dtype_f):
     eps = Variable(torch.randn(params.batch_size, params.Z_dim).type(dtype_f))

@@ -17,13 +17,14 @@ def test(x_te, y_te, params, model=None, best_test_loss=None):
 
     if(model==None):
         model = fnn_model_class(params)
-        model.load_state_dict(torch.load(params.load_model + "/model_best",  map_location=lambda storage, loc: storage))#, map_location=lambda storage, loc: storage)
+        if(torch.cuda.is_available()):
+            model = model.cuda()
+            print("--------------- Using GPU! ---------")
+        else:
+            print("=============== Using CPU =========")
+        
+        model = load_model(model, params.load_model + "/model_best_test")
     
-    if(torch.cuda.is_available()):
-        model = model.cuda()
-        print("--------------- Using GPU! ---------")
-    else:
-        print("=============== Using CPU =========")
 
     model.eval()
     X, Y = load_data(x_te, y_te, params, batch=False)
@@ -47,7 +48,8 @@ def test(x_te, y_te, params, model=None, best_test_loss=None):
         # pdb.set_trace()
         print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}'.format(loss.data[0], kl_loss, recon_loss, \
         ))
-        precision_k(y_te, Y_sample.data.numpy(), 5)
-        np.save('scores', Y_sample.data[0])
-        Y_probabs = sparse.csr_matrix(Y_sample.data[0])
+        precision_k(y_te, Y_sample, 5)
+        np.save('scores', Y_sample)
+        np.save('regen_data', X_sample)
+        Y_probabs = sparse.csr_matrix(Y_sample)
         sio.savemat('score_matrix.mat' , {'score_matrix': Y_probabs})
