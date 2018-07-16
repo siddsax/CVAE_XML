@@ -21,11 +21,11 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     kl_b = 1e10
     lk_b = 1e10
     loss_best2 = 1e10
-    num_mb = np.ceil(params.N/params.mb_size)
+    num_mb = np.ceil(params.N/(params.mb_size/params.ratio))
     best_epch_loss = 1e10
     best_test_loss = 1e10
     init = 0
-    loss_names = ['loss', 'recon_loss', 'lkhood_xy', 'kl_loss', 'lossU', 'entropy', 'labeled_loss']
+    loss_names = ['lossL', 'recon_loss', 'lkhood_xy', 'kl_loss', 'lossU', 'entropy', 'labeled_loss']
     model = fnn_model_class(params)
     
     if not os.path.exists('saved_models/' + params.model_name ):
@@ -53,43 +53,54 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     p_best = np.zeros(5)
     for epoch in range(init, params.num_epochs):
         logs = open("saved_models/" + params.model_name + "/logs.txt", 'a+')
-        # alpha = min(1.0, epoch*1e-3)#0.0
-        # kl_epch = 0
-        # recon_epch = 0
         for it in range(int(num_mb)):
             kt +=1
+            params.mb_size /= params.ratio
             X, Y = load_data(x_tr, y_tr, params)
-            loss, recon_loss, lkhood_xy, kl_loss = model(X, Y)
-            losses_new = [loss.data[0] + np.log(1. / params.y_dim), recon_loss, lkhood_xy + np.log(1. / params.y_dim), kl_loss]
+            params.mb_size *= params.ratio 
+            lossL, recon_loss, lkhood_xy, kl_loss = model(X, Y)
+            losses_new = [lossL.data[0] + np.log(1. / params.y_dim), recon_loss, lkhood_xy + np.log(1. / params.y_dim), kl_loss]
 
             if(x_unl is not None):
-                # dummy = sparse.csr_matrix(np.zeros(np.shape(y_tr)))
                 dummy = np.zeros(np.shape(x_unl))
                 XU, _ = load_data(x_unl, dummy, params) ###### using dummy as dummy
                 lossU, entropy, labeled_loss = model(XU)
-                loss = loss + lossU
-                lossU = lossU.data[0]
-                losses_new.append(lossU.data[0], entropy, labeled_loss)
+                losses_new += [lossU.data[0], entropy, labeled_loss]
 
             losses = losses_add(losses_new, losses) if epoch or it else losses_add(losses_new)
 
             if it % max(int(num_mb/12),5) == 0:
-                if(loss.data[0]<loss_best2):
-                    loss_best2 = loss.data[0]
+                if(lossL.data[0]<loss_best2):
+                    loss_best2 = lossL.data[0]
                     save_model(model,params, "/model_best_batch")
                 out = ""
                 for i in range(len(losses_new)):
                     out+= loss_names[i] + ":" + str(losses_new[i]) + " "
                 print(out)
             # ------------------------ Propogate loss -----------------------------------
-
+            if(x_unl is not None): 
+                loss = lossL + lossU
+            else:
+                loss = lossL
+                
             loss.backward()
             del loss
-            # torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
-            # for p in model.parameters():
-            #     p.data.add_(-params.lr, p.grad.data)
             optimizer.step()
             optimizer.zero_grad()
+
+            # lossL.backward()
+            # del lossL
+            # # torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+            # # for p in model.parameters():
+            # #     p.data.add_(-params.lr, p.grad.data)
+            # optimizer.step()
+            # optimizer.zero_grad()
+            # if(x_unl is not None):
+            #     lossU.backward()
+            #     del lossU
+            #     optimizer.step()
+            #     optimizer.zero_grad()
+                
             # ----------------------------------------------------------------------------
         
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 

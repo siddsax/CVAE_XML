@@ -58,8 +58,17 @@ class loss:
         
         return xent_loss - logy
 
+    def entropy(self, x):
+        b = x*torch.log(x+1e-8) + (1-x)*torch.log(1-x+1e-8)
+
+        # b = torch.nn.functional.softmax(x, dim=-1) * torch.nn.functional.log_softmax(x, dim=-1)
+        b = -1.0 * b.mean()*x.shape[-1]
+        # pdb.set_trace()
+        return b
+    
     def cls_loss(self, y, y_pred, params):
-        alpha = 0.1 * params.N
+        alpha = 1.0
+        # alpha = 0.1 * params.N
         return alpha * torch.nn.functional.mse_loss(y_pred, y)*y.shape[-1]
         # return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
         # return alpha * torch.mean(torch.sum(torch.abs(y_pred - y),dim=1))
@@ -96,3 +105,5 @@ class loss:
     #     labeled_loss = logxy_loss(x, x_decoded_mean) + kl(x, x_decoded_mean)
         
     #     return K.mean(K.sum(_y_output * labeled_loss, axis=-1)) + entropy
+
+

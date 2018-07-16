@@ -14,14 +14,16 @@ class fnn_model_class(nn.Module):
         
     def forward(self, batch_x, batch_y=None, test=0):
         # ----------- Encode (X, Y) --------------------------------------------
-        # H = self.encoder(batch_x)
-        z_mean, z_log_var = self.variational(batch_x)
+        H = self.encoder(batch_x)
+        z_mean, z_log_var = self.variational(H)
         z = sample_z(z_mean, z_log_var, self.params)
-        Y_sample = self.classifier(batch_x)
         # ---------------------------------------------------------------
         # ----------- Decode (X, z) --------------------------------------------
         # ------------------ Check for Recon Loss ----------------------------
         if(batch_y is not None):
+            Y_sample = self.classifier(H)
+            # Y_sample = torch.nn.functional.sigmoid(Y_sample)
+
             X_sample = self.decoder(z, batch_y)
             lkhood_xy = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params)
             recon_loss = self.params.loss_fns.cls_loss(batch_y, Y_sample, self.params)
@@ -41,11 +43,23 @@ class fnn_model_class(nn.Module):
             else:
                 return loss, recon_loss, lkhood_xy, kl_loss
         else:
-            X_sample = self.decoder(z_mean, Y_sample)
+            # Sofmaxization
+            Y_sample = self.classifier(H)
+            # Y_sample = torch.nn.functional.sigmoid(o)
+            X_sample = self.decoder(z, Y_sample)
             lkhood_xy = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params)
-            entropy = torch.nn.functional.binary_cross_entropy(Y_sample, Y_sample)
-            labeled_loss = kl_loss + lkhood_xy
-            loss = torch.mean(torch.sum(Y_sample * labeled_loss, axis=-1)) + entropy
+
+            # Y_sample = torch.nn.functional.softmax(o)
+            entropy = self.params.loss_fns.entropy(Y_sample)
+            if(test):
+                kl_loss = 0.0
+                labeled_loss = lkhood_xy
+            else:
+                kl_loss = self.params.loss_fns.kl(z_mean, z_log_var)
+                labeled_loss = kl_loss + lkhood_xy
+                kl_loss = kl_loss.data[0]
+            loss = labeled_loss + entropy
+            # loss = torch.mean(torch.sum(Y_sample * labeled_loss, dim=-1)) + entropy
             entropy = entropy.data[0]
             labeled_loss = labeled_loss.data[0]
             return loss, entropy, labeled_loss

@@ -24,7 +24,7 @@ parser.add_argument('--te', dest='testing', type=int, default=0, help='model nam
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
-parser.add_argument('--pp', dest='pp_flg', type=int, default=2, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
 parser.add_argument('--loss', dest='loss_type', type=str, default="MSLoss", help='model name')
 parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient clipping')
 params = parser.parse_args()
@@ -43,17 +43,30 @@ if(params.data_set=="Wiki"):
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz')#.dense()
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz')#.dense()
 elif(params.data_set=="Eurlex"):
-    x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')#.dense() # Prepocessed
-    y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')#.dense()
-    x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
-    y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
+    # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')#.dense()
+    # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')#.dense()
+    # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
+    # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
+
+# /homeappl/home/saxenasi/CVAE_XML/datasets/Eurlex/manik/subsamples
+    x_tr = np.load('../datasets/Eurlex/manik/subsamples/x_20.npy')
+    y_tr = np.load('../datasets/Eurlex/manik/subsamples/y_20.npy')
+    x_te = np.load('../datasets/Eurlex/manik/x_te.npy')
+    y_te = np.load('../datasets/Eurlex/manik/y_te.npy')
+
+
     # x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
     # y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
     # x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
     # y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
 
     x_unl = None
-
+    x_unl = np.load('../datasets/Eurlex/manik/x_tr.npy')
+    if(x_unl is not None):
+        params.ratio = 5
+    else:
+        params.ratio = 1
+        
  # ----------------------------------------------------------------------
  
 # x_tr = x_tr[0:20]

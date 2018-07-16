@@ -26,7 +26,7 @@ class decoder(torch.nn.Module):
 
         # if(params.fin_layer == "Sigmoid"):
         # elif(params.fin_layer == "ReLU"):
-        #     self.l3 = nn.ReLU()
+        self.l3 = nn.Sigmoid()
         # elif(params.fin_layer == "None"):
         #     self.l3 = ""
 
@@ -48,6 +48,6 @@ class decoder(torch.nn.Module):
         o = self.drp_1(o)
         # ------------------------------
         o = self.l2(o)
-        # o = self.l3(o)
+        o = self.l3(o)
         
         return o
