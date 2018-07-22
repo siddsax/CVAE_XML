@@ -12,4 +12,5 @@ clusterings
 *.mat
 *.npy
 *.png
+npys
 useful_saved_data

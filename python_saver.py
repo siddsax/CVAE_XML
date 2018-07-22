@@ -1,12 +1,12 @@
 import numpy as np
 
-x = np.load('datasets/clustering_y/new_x.npy')
-y = np.load('datasets/clustering_y/new_y.npy')
-x_o = np.load('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/eurlex_docs/x_tr.npy')
-xt_o = np.load('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/eurlex_docs/x_te.npy')
+x = np.load('new_x_trained_ly_bce.npy')
+y = np.load('new_y_trained_ly_l1.npy')
+x_o = np.load('datasets/Eurlex/manik/x_tr.npy')
+xt_o = np.load('datasets/Eurlex/manik/x_te.npy')
 
-yt_o = np.load('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/eurlex_docs/y_te.npy')
-y_o = np.load('/scratch/work/saxenas2/CVAE_XML/datasets/Eurlex/eurlex_docs/y_tr.npy')
+yt_o = np.load('datasets/Eurlex/manik/y_te.npy')
+y_o = np.load('datasets/Eurlex/manik/y_tr.npy')
 x_n = np.concatenate((x,x_o),axis=0)
 y_n = np.concatenate((y,y_o),axis=0)
 

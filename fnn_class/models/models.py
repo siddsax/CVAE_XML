@@ -55,7 +55,21 @@ class variational(torch.nn.Module):
     def __init__(self, params):
         
         super(variational, self).__init__()
+        self.params = params
+        # if(params.compress):
+        #     self.l0 = nn.Linear(params.X_dim, params.H_dim, bias=True)
+        # else:
+        #     self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
+        #     self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
+        #     self.emb_layer.weight.requires_grad = False
+        #     self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
+        #     if(self.params.layer_y):
+        #         self.l0 = nn.Linear(params.X_dim + params.e_dim, params.H_dim, bias=True)
+        #     else:
+        #         self.l0 = nn.Linear(params.X_dim + params.y_dim, params.H_dim, bias=True)
+
         self.l0 = nn.Linear(params.X_dim, params.H_dim, bias=True)
+        
         self.relu = nn.ReLU()
         self.drp_5 = nn.Dropout(.5)
         self.drp_1 = nn.Dropout(.1)
@@ -71,10 +85,22 @@ class variational(torch.nn.Module):
         weights_init(self.mu.weight)
         weights_init(self.var.weight)
         
-    def forward(self, inputs):
+    def forward(self, X, y, layer):
         
-        o = self.drp_5(inputs)
-        o = self.l0(o)
+        # if(self.params.compress):
+        #     o = X
+        # else:
+        #     if(self.params.layer_y):
+        #         # y = layer(y)/torch.sum(y, dim=1).view(-1,1)
+        #         # import pdb
+        #         # pdb.set_trace()
+        #         y = torch.mm(y, Variable(self.w2v_w))/torch.sum(y, dim=1).view(-1,1)
+        #         # y = layer(y)
+        #         # y = self.relu(y)
+        #     X = self.drp_5(X)
+        #     o = torch.cat((y,X), dim=-1)
+        
+        o = self.l0(X)
         # o = self.bn(o)
         o = self.relu(o)
         o = self.drp_1(o)
@@ -94,6 +120,7 @@ class classifier(torch.nn.Module):
     def __init__(self, params):
         super(classifier, self).__init__()
 
+        self.nrm = nn.BatchNorm1d(params.X_dim)
         self.l0 = nn.Linear(params.X_dim, params.H_dim, bias=True)
         self.relu = nn.ReLU()
         self.drp_5 = nn.Dropout(.5)
@@ -112,6 +139,7 @@ class classifier(torch.nn.Module):
 
     def forward(self, inputs):
         
+        inputs = self.nrm(inputs)
         o = self.drp_5(inputs)
         o = self.l0(o)
         # o = self.bn(o)
@@ -161,6 +189,4 @@ class classifier(torch.nn.Module):
 #             o = self.l3(o)
 
 #         return o
-
-
 

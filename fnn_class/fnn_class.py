@@ -1,5 +1,6 @@
 from header import *
 import pdb
+from gen_new import gen
 sys.dont_write_bytecode = True
 # from pycrayon import CrayonClient
 
@@ -24,10 +25,13 @@ parser.add_argument('--te', dest='testing', type=int, default=0, help='model nam
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
-parser.add_argument('--pp', dest='pp_flg', type=int, default=2, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
 parser.add_argument('--loss', dest='loss_type', type=str, default="MSLoss", help='model name')
 parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='train on labeled data')
+parser.add_argument('--c', dest='compress', type=int, default=0, help='compress label size')
+parser.add_argument('--ly', dest='layer_y', type=int, default=1, help='layer over labels')
+parser.add_argument('--g', dest='gen', type=int, default=0, help='gen data from give new y')
 params = parser.parse_args()
 
 # --------------------------------------------------------------------------------------------------------------
@@ -49,17 +53,26 @@ elif(params.data_set=="Eurlex"):
     # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
     # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
 
-# /homeappl/home/saxenasi/CVAE_XML/datasets/Eurlex/manik/subsamples
-    x_tr = np.load('../datasets/Eurlex/manik/subsamples/x_20.npy')
-    y_tr = np.load('../datasets/Eurlex/manik/subsamples/y_20.npy')
-    x_te = np.load('../datasets/Eurlex/manik/x_te.npy')
-    y_te = np.load('../datasets/Eurlex/manik/y_te.npy')
-
+    # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')
+    # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')
+    # # x_tr = np.load('../datasets/Eurlex/manik/subsamples/x_20.npy')
+    # # y_tr = np.load('../datasets/Eurlex/manik/subsamples/y_20.npy')
+    # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')
+    # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')
 
     # x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
     # y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
-    # x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
-    # y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
+    x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_20.npy')
+    y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_20.npy')
+
+    x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
+    y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
+    # if(params.compress):
+    #     x_tr = y_tr
+    #     x_te = y_te
+
+    params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')#.T
+    params.e_dim = params.w2v_w.shape[1]
 
     x_unl = None
     # x_unl = np.load('../datasets/Eurlex/manik/x_tr.npy')
@@ -69,7 +82,7 @@ elif(params.data_set=="Eurlex"):
         params.ratio = 1
         
  # ----------------------------------------------------------------------
- 
+
 # x_tr = x_tr[0:20]
 # y_tr = y_tr[0:20]
 
@@ -127,12 +140,16 @@ if(params.pp_flg):
     elif(params.pp_flg==2):
         pp = preprocessing.StandardScaler()
     if(x_unl is not None):
-        scaler = pp.fit(x_unl)
-        x_unl = scaler.transform(x_unl)    
+        params.scaler = pp.fit(x_unl)
+        x_unl = params.scaler.transform(x_unl)    
     else:
-        scaler = pp.fit(x_tr)
-    x_tr = scaler.transform(x_tr)    
-    x_te = scaler.transform(x_te)
+        params.scaler = pp.fit(x_tr)
+
+    if(params.pp_flg==1):
+        x_tr = params.scaler.transform(x_tr)    
+        x_te = params.scaler.transform(x_te)
+        x_tr = np.divide(x_tr, np.sum(x_tr, axis=1).reshape((x_tr.shape[0], 1))) 
+        x_te = np.divide(x_te, np.sum(x_te, axis=1).reshape((x_te.shape[0], 1))) 
     print('Boom 2')
 
 # -----------------------  Loss ------------------------------------
@@ -143,6 +160,11 @@ params.loss_fns = loss()
 params.X_dim = x_tr.shape[1]
 params.y_dim = y_tr.shape[1]
 params.N = x_tr.shape[0]
+if (x_unl is not None):
+    params.N_unl = x_unl.shape[0]
+else:
+    params.N_unl = params.N
+
 if torch.cuda.is_available():
     params.dtype = torch.cuda.FloatTensor
 else:
@@ -150,13 +172,12 @@ else:
 
 # -----------------------------------------------------------------------------
 
-if(params.training and not params.testing):
-    train(x_tr, y_tr, x_te, y_te, x_unl, params)
+if(params.gen):
+    gen(x_tr, y_tr, params)
 elif(params.testing):
-    # test(x_tr, y_tr, params)
     test(x_te, y_te, params)
-else:
-    dig(x_tr, y_tr, x_te, y_te, params)
+elif(params.training):
+    train(x_tr, y_tr, x_te, y_te, x_unl, params)
 
 
 
