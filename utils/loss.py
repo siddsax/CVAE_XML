@@ -50,10 +50,12 @@ class loss:
         return torch.mean(kl_loss)
 
     def logxy_loss(self, x, x_decoded_mean, params):
-        xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
+        # xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
+        # xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
+        xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
         logy = Variable(torch.from_numpy(np.array([np.log(1. / params.y_dim)])).type(params.dtype))
         
-        return xent_loss - logy
+        return xent_loss# - logy
 
     def entropy(self, x):
         b = x*torch.log(x+1e-8) + (1-x)*torch.log(1-x+1e-8)
@@ -61,8 +63,9 @@ class loss:
         return b
     
     def cls_loss(self, y, y_pred, params):
-        alpha = 0.1*params.N
-        return alpha * torch.nn.functional.mse_loss(y_pred, y)*y.shape[-1]
+        # alpha = 0.1*params.N_unl/params.N
+        alpha = 1
+        return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
 
     def ranking_mse_loss(self, y, y_pred, params):
         rank_mat = np.argsort(y_pred.data.cpu().numpy())
@@ -73,3 +76,11 @@ class loss:
                 v1[i,rank_mat[i, -(k+1)]] = ((k+1)**2)*y_pred[i,rank_mat[i, -(k+1)]].clone()
                 v2[i, rank_mat[i, -(k+1)]] = ((k+1)**2)*y[i,rank_mat[i, -(k+1)]].clone()
         return torch.nn.functional.mse_loss(v1, v2)*y.shape[-1]
+
+    def log_standard_categorical(self, p):
+        prior = torch.nn.functional.softmax(torch.ones_like(p), dim=1)
+        prior.requires_grad = False
+
+        cross_entropy = -torch.sum(p * torch.log(prior + 1e-8), dim=1)
+
+        return cross_entropy

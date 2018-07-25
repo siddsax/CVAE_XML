@@ -28,6 +28,9 @@ parser.add_argument('--pp', dest='pp_flg', type=int, default=2, help='1 is for m
 parser.add_argument('--loss', dest='loss_type', type=str, default="MSLoss", help='model name')
 parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='train on labeled data')
+parser.add_argument('--ss', dest='ss', type=int, default=0, help='train on labeled data')
+parser.add_argument('--ly', dest='layer_y', type=int, default=1, help='layer over labels')
+
 params = parser.parse_args()
 
 # --------------------------------------------------------------------------------------------------------------
@@ -44,30 +47,31 @@ if(params.data_set=="Wiki"):
     x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz')#.dense()
     y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz')#.dense()
 elif(params.data_set=="Eurlex"):
-    # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')#.dense()
-    # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')#.dense()
-    # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')#.dense()
-    # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')#.dense()
+    # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')
+    # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')
 
-# /homeappl/home/saxenasi/CVAE_XML/datasets/Eurlex/manik/subsamples
-    x_tr = np.load('../datasets/Eurlex/manik/subsamples/x_20.npy')
-    y_tr = np.load('../datasets/Eurlex/manik/subsamples/y_20.npy')
-    x_te = np.load('../datasets/Eurlex/manik/x_te.npy')
-    y_te = np.load('../datasets/Eurlex/manik/y_te.npy')
+    # x_tr = np.load('../datasets/Eurlex/manik/subsamples/x_20.npy')
+    # y_tr = np.load('../datasets/Eurlex/manik/subsamples/y_20.npy')
+    # x_te = np.load('../datasets/Eurlex/manik/x_te.npy')
+    # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')
 
-
-    # x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
-    # y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
-    # x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
-    # y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
-
-    x_unl = None
-    # x_unl = np.load('../datasets/Eurlex/manik/x_tr.npy')
-    if(x_unl is not None):
+    if(params.ss):
+        x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_20.npy')
+        y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_20.npy')
+        x_unl = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
         params.ratio = 5
     else:
+        x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
+        y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
         params.ratio = 1
-        
+        x_unl = None
+
+    x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
+    y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
+
+    params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
+    params.e_dim = params.w2v_w.shape[1]
+            
  # ----------------------------------------------------------------------
  
 # x_tr = x_tr[0:20]
@@ -136,13 +140,15 @@ if(params.pp_flg):
     print('Boom 2')
 
 # -----------------------  Loss ------------------------------------
-# params.loss_fn = getattr(loss(), params.loss_type)
 params.loss_fns = loss()
-# print(params.loss_type)
 # -----------------------------------------------------------------
 params.X_dim = x_tr.shape[1]
 params.y_dim = y_tr.shape[1]
 params.N = x_tr.shape[0]
+if (x_unl is not None):
+    params.N_unl = x_unl.shape[0]
+else:
+    params.N_unl = params.N
 if torch.cuda.is_available():
     params.dtype = torch.cuda.FloatTensor
 else:
@@ -153,42 +159,6 @@ else:
 if(params.training and not params.testing):
     train(x_tr, y_tr, x_te, y_te, x_unl, params)
 elif(params.testing):
-    # test(x_tr, y_tr, params)
     test(x_te, y_te, params)
 else:
     dig(x_tr, y_tr, x_te, y_te, params)
-
-
-
-# fnn_model_class(
-#   (encoder): encoder(
-#     (l0): Linear(in_features=5000, out_features=256)
-#     (relu): ReLU()
-#     (drp): Dropout(p=0.5)
-#     (drp_1): Dropout(p=0.1)
-#     (bn): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True)
-#     (bn_1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True)
-#     (l2): Linear(in_features=256, out_features=512)
-#   )
-#   (decoder): decoder(
-#     (l0): Linear(in_features=3956, out_features=256)
-#     (l1): Linear(in_features=456, out_features=256)
-#     (relu): ReLU()
-#     (drp): Dropout(p=0.5)
-#     (bn): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True)
-#     (bn_1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True)
-#     (l2): Linear(in_features=256, out_features=5000)
-#     (drp_1): Dropout(p=0.1)
-#     (l3): Sigmoid()
-#   )
-#   (variational): variational(
-#     (mu): Linear(in_features=512, out_features=200)
-#     (var): Linear(in_features=512, out_features=200)
-#   )
-#   (classifier): classifier(
-#     (l0): Linear(in_features=512, out_features=3956)
-#     (bn): BatchNorm1d(3956, eps=1e-05, momentum=0.1, affine=True)
-#     (drp): Dropout(p=0.5)
-#     (l3): Sigmoid()
-#   )
-# )
