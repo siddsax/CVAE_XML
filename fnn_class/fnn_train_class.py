@@ -96,6 +96,9 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
                 out = ""
                 for i in range(len(losses_new)):
                     out+= loss_names[i] + ":" + str(losses_new[i]) + " "
+                
+                zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.zeros(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
+                out += "zero loss" + ":" + str(zero_dist)
                 print(out)
             prem = 1        
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 
@@ -164,13 +167,11 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             save_model(model,optimizer, epoch,params, "/model_best_test_regen")
 
         
+        out = ""
         if(p_best[0]< p_new[0]):
             p_best = p_new
             print("====== New GOAT =====")
             save_model(model,optimizer, epoch,params, "/model_best_test")
-        
-        
-        out = ""
         for i in range(len(p_best)):
             out += str(i) + ":" + str(p_best[i]) + " "
         print(out)

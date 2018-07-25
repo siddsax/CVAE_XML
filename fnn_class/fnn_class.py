@@ -71,7 +71,7 @@ elif(params.data_set=="Eurlex"):
 
     params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
     params.e_dim = params.w2v_w.shape[1]
-            
+
 # ----------------------------------------------------------------------
  
 # x_tr = x_tr[0:20]

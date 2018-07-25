@@ -37,7 +37,7 @@ class fnn_model_class(nn.Module):
                 dist_from_pred_y = dist_from_pred_y.data[0]
             else:
                 self.iter +=1
-                beta = min(1, self.iter/1000000.0)
+                beta = 0#min(1, self.iter/1000000.0)
                 kl_loss = self.params.loss_fns.kl(z_mean, z_log_var)
                 loss = recon_loss + beta*kl_loss + dist
                 import pdb

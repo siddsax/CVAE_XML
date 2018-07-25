@@ -37,14 +37,14 @@ def test(x_te, y_te, params, model=None, best_test_loss=None):
     #     avg+= dist
 
     X, Y = load_data(x_te, y_te, params, batch=False)
-    zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.ones(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
+    zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.zeros(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
     loss, recon_loss, dist, dist_from_pred_y, kl_loss, Y_sample, X_sample, X_from_pred_y = model(X, Y, test=1)
     model.train()
 
     if(best_test_loss!=None):
         if(loss.data[0] < best_test_loss ):
             best_test_loss = loss.data[0]
-        print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4}; All_zero_dist: {:.4};, dist: {:.4};, dist_from_pred_y: {:.4};'.format(loss.data[0], \
+        print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4}; All_min1_dist: {:.4};, dist: {:.4};, dist_from_pred_y: {:.4};'.format(loss.data[0], \
         kl_loss, recon_loss, best_test_loss, zero_dist, dist, dist_from_pred_y))
         p = precision_k(y_te, Y_sample, 5)
         # out = ""
