@@ -68,7 +68,10 @@ class variational(torch.nn.Module):
         else:
             self.l0 = nn.Linear(params.X_dim + params.y_dim, params.H_dim, bias=True)
 
-        self.l0 = nn.Linear(params.X_dim, params.H_dim, bias=True)
+        if(self.params.layer_y):
+            self.l0 = nn.Linear(params.X_dim + params.e_dim, params.H_dim, bias=True)
+        else:
+            self.l0 = nn.Linear(params.X_dim + params.y_dim, params.H_dim, bias=True)
         self.relu = nn.ReLU()
         self.drp_5 = nn.Dropout(.5)
         self.drp_1 = nn.Dropout(.1)
@@ -84,13 +87,16 @@ class variational(torch.nn.Module):
         weights_init(self.mu.weight)
         weights_init(self.var.weight)
         
-    def forward(self, inputs):
+    def forward(self, X, y, layer):
         
         if(self.params.layer_y):
             # y = layer(y)/torch.sum(y, dim=1).view(-1,1)
             # import pdb
             # pdb.set_trace()
-            y = torch.mm(y, Variable(self.w2v_w))/torch.sum(y, dim=1).view(-1,1)
+            y_sum = torch.sum(y, dim=1).view(-1,1)
+            divisor = torch.max(y_sum, Variable(torch.ones(y_sum.shape).type(self.params.dtype)))
+            y = torch.mm(y, Variable(self.w2v_w))
+            y = y/divisor
             # y = layer(y)
             # y = self.relu(y)
         X = self.drp_5(X)

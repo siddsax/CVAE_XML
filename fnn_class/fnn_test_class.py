@@ -27,24 +27,25 @@ def test(x_te, y_te, params, model=None, best_test_loss=None):
 
     model.eval()
 
-    avg = 0.0
-    candidates = [1, .1, .01, 0]
-    can = candidates[np.random.randint(0,4)]
-    print(can)
-    X, Y = load_data(x_te, np.random.binomial(1, can, size=y_te.shape), params, batch=False)
-    for i in range(5):
-        loss, recon_loss, dist, dist_from_pred_y, kl_loss, Y_sample, X_sample, X_from_pred_y = model(X, Y, test=1)
-        avg+= dist
+    # avg = 0.0
+    # candidates = [1, .1, .01, 0]
+    # can = candidates[np.random.randint(0,4)]
+    # print(can)
+    # X, Y = load_data(x_te, np.random.binomial(1, can, size=y_te.shape), params, batch=False)
+    # for i in range(5):
+    #     loss, recon_loss, dist, dist_from_pred_y, kl_loss, Y_sample, X_sample, X_from_pred_y = model(X, Y, test=1)
+    #     avg+= dist
 
     X, Y = load_data(x_te, y_te, params, batch=False)
+    zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.ones(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
     loss, recon_loss, dist, dist_from_pred_y, kl_loss, Y_sample, X_sample, X_from_pred_y = model(X, Y, test=1)
     model.train()
 
     if(best_test_loss!=None):
         if(loss.data[0] < best_test_loss ):
             best_test_loss = loss.data[0]
-        print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4}; Rand_dist: {:.4};, dist: {:.4};, dist_from_pred_y: {:.4};'.format(loss.data[0], \
-        kl_loss, recon_loss, best_test_loss, avg, dist, dist_from_pred_y))
+        print('Test Loss; Loss: {:.4}; KL-loss: {:.4}; recons_loss: {:.4}; best_loss: {:.4}; All_zero_dist: {:.4};, dist: {:.4};, dist_from_pred_y: {:.4};'.format(loss.data[0], \
+        kl_loss, recon_loss, best_test_loss, zero_dist, dist, dist_from_pred_y))
         p = precision_k(y_te, Y_sample, 5)
         # out = ""
         # for i in range(len(p)):

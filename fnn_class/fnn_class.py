@@ -17,14 +17,14 @@ parser.add_argument('--e', dest='num_epochs', type=int, default=10000, help='ste
 parser.add_argument('--b', dest='beta', type=float, default=1.0, help='factor multipied to likelihood param')
 parser.add_argument('--d', dest='disp_flg', type=int, default=0, help='display graphs')
 parser.add_argument('--sve', dest='save', type=int, default=1, help='save models or not')
-parser.add_argument('--ss', dest='save_step', type=int, default=500, help='gap between model saves')
+parser.add_argument('--sstep', dest='save_step', type=int, default=500, help='gap between model saves')
 parser.add_argument('--mn', dest='model_name', type=str, default='', help='model name')
 parser.add_argument('--tr', dest='training', type=int, default=1, help='model name')
 parser.add_argument('--te', dest='testing', type=int, default=0, help='model name')
 parser.add_argument('--lm', dest='load_model', type=str, default="", help='model name')
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
-parser.add_argument('--pp', dest='pp_flg', type=int, default=2, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
+parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
 parser.add_argument('--loss', dest='loss_type', type=str, default="MSLoss", help='model name')
 parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='train on labeled data')
@@ -61,8 +61,8 @@ elif(params.data_set=="Eurlex"):
         x_unl = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
         params.ratio = 5
     else:
-        x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
-        y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_tr.npy')
+        x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_20.npy')
+        y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_20.npy')
         params.ratio = 1
         x_unl = None
 
@@ -72,7 +72,7 @@ elif(params.data_set=="Eurlex"):
     params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
     params.e_dim = params.w2v_w.shape[1]
             
- # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
  
 # x_tr = x_tr[0:20]
 # y_tr = y_tr[0:20]
