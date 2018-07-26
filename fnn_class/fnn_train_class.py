@@ -36,6 +36,8 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     logs.write('\n')
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
+    # import pdb
+    # pdb.set_trace()
     if(torch.cuda.is_available()):
         model = model.cuda()
         print("--------------- Using GPU! ---------")
@@ -43,7 +45,14 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
         print("=============== Using CPU =========")
     if(len(params.load_model)):
         print(params.load_model)
-        model, optimizer, init = load_model(model, params.load_model + "/model_best_test", optimizer)
+        if(params.freezing):
+            model = load_model(model, params.load_model + "/model_best_test")
+            model.eval()
+            best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+            print("*"*75)
+            model.train()
+        else:
+            model, optimizer, init = load_model(model, params.load_model + "/model_best_test", optimizer)
 
     prem = 0
     kt = 0
@@ -111,12 +120,31 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
         print("="*50)            
         for i in range(len(losses_new)):
             out+= loss_names[i] + ":" + str(losses[i]) + " "
-        print(out)
         
         best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+        
+        if(xlk_tr_tst < xlk_tr_tst_bst):
+            xlk_tr_tst_bst = xlk_tr_tst
+            print("====== New REGEN-GOAT =====")
+            save_model(model,optimizer, epoch,params, "/model_best_test_regen")
+        
+        out += "regen best test: " + str(xlk_tr_tst_bst) + " "
+
+        print(out)
         out = out + "recon_loss_tst: " + str(recon_loss_tst) + " P_1 " + str(p_new[0]) + "\n"
         logs.write(out)
         logs.close()
+        
+        out = ""
+        if(p_best[0]< p_new[0]):
+            p_best = p_new
+            print("====== New GOAT =====")
+            save_model(model,optimizer, epoch,params, "/model_best_test")
+        for i in range(len(p_best)):
+            out += str(i) + ":" + str(p_best[i]) + " "
+        print(out)
+            
+        print("="*50)
         
         if(epoch%100==0):
             plt.gcf().clear()
@@ -161,21 +189,7 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
         #     if(it2 % 100 == 0 ):
         #             win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
         #     it2 += 1
-        if(xlk_tr_tst < xlk_tr_tst_bst):
-            xlk_tr_tst_bst = xlk_tr_tst
-            print("====== New REGEN-GOAT =====")
-            save_model(model,optimizer, epoch,params, "/model_best_test_regen")
 
         
-        out = ""
-        if(p_best[0]< p_new[0]):
-            p_best = p_new
-            print("====== New GOAT =====")
-            save_model(model,optimizer, epoch,params, "/model_best_test")
-        for i in range(len(p_best)):
-            out += str(i) + ":" + str(p_best[i]) + " "
-        print(out)
-            
-        print("="*50)
 
     plt.show()

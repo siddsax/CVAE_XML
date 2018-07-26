@@ -51,8 +51,8 @@ class loss:
 
     def logxy_loss(self, x, x_decoded_mean, params):
         # xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
-        # xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
-        xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
+        xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
+        # xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
         logy = Variable(torch.from_numpy(np.array([np.log(1. / params.y_dim)])).type(params.dtype))
         
         return xent_loss# - logy

@@ -16,6 +16,13 @@ class fnn_model_class(nn.Module):
         self.variational = variational(params)
         self.classifier = classifier(params)
         self.iter = 0
+        if(params.freezing):
+            for param in self.variational.parameters():
+                param.requires_grad = False
+            for param in self.decoder.parameters():
+                param.requires_grad = False
+            for param in self.encoder.parameters():
+                param.requires_grad = False
 
     def forward(self, batch_x, batch_y=None, test=0):
 
@@ -72,7 +79,7 @@ class fnn_model_class(nn.Module):
                 labeled_loss = dist
             else:
                 kl_loss = self.params.loss_fns.kl(z_mean, z_log_var)
-                labeled_loss = kl_loss + dist
+                labeled_loss = dist #+kl_loss
                 kl_loss = kl_loss.data[0]
             loss = labeled_loss #+ entropy
             # loss = torch.mean(torch.sum(Y_sample * labeled_loss, dim=-1)) + entropy

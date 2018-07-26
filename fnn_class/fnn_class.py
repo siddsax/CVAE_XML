@@ -30,6 +30,7 @@ parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient
 parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='train on labeled data')
 parser.add_argument('--ss', dest='ss', type=int, default=0, help='train on labeled data')
 parser.add_argument('--ly', dest='layer_y', type=int, default=1, help='layer over labels')
+parser.add_argument('--f', dest='freezing', type=int, default=0, help='layer over labels')
 
 params = parser.parse_args()
 
@@ -56,16 +57,15 @@ elif(params.data_set=="Eurlex"):
     # y_te = np.load('../datasets/Eurlex/manik/y_te.npy')
 
     if(params.ss):
-        x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_20.npy')
-        y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_20.npy')
         x_unl = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
         params.ratio = 5
     else:
-        x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_20.npy')
-        y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_20.npy')
-        params.ratio = 1
         x_unl = None
+        params.ratio = 1
 
+    x_tr = np.load('../datasets/Eurlex/eurlex_docs/x_20.npy')
+    y_tr = np.load('../datasets/Eurlex/eurlex_docs/y_20.npy')
+    x_for_pp = np.load('../datasets/Eurlex/eurlex_docs/x_tr.npy')
     x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
     y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
 
@@ -130,11 +130,11 @@ if(params.pp_flg):
         pp = preprocessing.MinMaxScaler()
     elif(params.pp_flg==2):
         pp = preprocessing.StandardScaler()
+    
+    scaler = pp.fit(x_for_pp)
     if(x_unl is not None):
-        scaler = pp.fit(x_unl)
         x_unl = scaler.transform(x_unl)    
-    else:
-        scaler = pp.fit(x_tr)
+
     x_tr = scaler.transform(x_tr)    
     x_te = scaler.transform(x_te)
     print('Boom 2')

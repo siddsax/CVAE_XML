@@ -23,24 +23,29 @@ class decoder(torch.nn.Module):
         self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
         # self.l0 = nn.Linear(params.y_dim, params.h_dim, bias=True)
         if(self.params.layer_y):
-            self.nrm = nn.BatchNorm1d(params.Z_dim + params.e_dim)
             self.l0 = nn.Linear(params.Z_dim + params.e_dim, params.H_dim, bias=True)
         else:
-            self.nrm = nn.BatchNorm1d(params.Z_dim + params.y_dim)
             self.l0 = nn.Linear(params.Z_dim + params.y_dim, params.H_dim, bias=True)
+        self.bn_l0 = nn.BatchNorm1d(params.H_dim)
         
         # ==================================================
 
         self.lx1 = nn.Linear(params.H_dim, 2*params.H_dim, bias=True)
+        self.bn_lx1 = nn.BatchNorm1d(2*params.H_dim)
         self.lx2 = nn.Linear(2*params.H_dim, 3*params.H_dim, bias=True)
+        self.bn_lx2 = nn.BatchNorm1d(3*params.H_dim)
         self.lx3 = nn.Linear(3*params.H_dim, 4*params.H_dim, bias=True)
+        self.bn_lx3 = nn.BatchNorm1d(4*params.H_dim)
         self.lx4 = nn.Linear(4*params.H_dim, 5*params.H_dim, bias=True)
-        self.l2 = nn.Linear(5*params.H_dim, params.X_dim, bias=True)
+        self.bn_lx4 = nn.BatchNorm1d(5*params.H_dim)
+        self.l2 = nn.Linear(params.H_dim, params.X_dim, bias=True)
 
         weights_init(self.lx1.weight)
         weights_init(self.lx2.weight)
         weights_init(self.lx3.weight)
         weights_init(self.lx4.weight)
+
+        self.relu = nn.ReLU()
 
 
         self.l3 = nn.Sigmoid()
@@ -65,10 +70,20 @@ class decoder(torch.nn.Module):
         o = torch.cat((o, z), dim=-1)
 
         o = self.l0(o)
-        o = self.lx1(o)
-        o = self.lx2(o)
-        o = self.lx3(o)
-        o = self.lx4(o)
+        o = self.bn_l0(o)
+        o = self.relu(o)
+        # o = self.lx1(o)
+        # # o = self.bn_lx1(o)
+        # o = self.relu(o)
+        # o = self.lx2(o)
+        # # o = self.bn_lx2(o)
+        # o = self.relu(o)
+        # o = self.lx3(o)
+        # # o = self.bn_lx3(o)
+        # o = self.relu(o)
+        # o = self.lx4(o)
+        # o = self.bn_lx4(o)
+        # o = self.relu(o)
         o = self.l2(o)
         o = self.l3(o)
 
