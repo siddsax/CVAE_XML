@@ -18,7 +18,7 @@ def losses_add(list_of_losses, losses=None):
 def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     best_test_loss = 1e10
     init = 0
-    loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'dist_l1', 'dist_bce', "zero_dist", 'dist_mse', 'lossU', 'entropy', 'dist', 'kl_loss']
+    loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'dist_l1', 'dist_bce', 'dist_mse', "zero_dist", 'lossU', 'entropy', 'dist', 'kl_loss']
     model = fnn_model_class(params)
     
     if not os.path.exists('saved_models/' + params.model_name ):
@@ -48,9 +48,11 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     re_tr_old = 0.0
     xlk_tr_old = 0.0
     tr_old = 0.0
+    best_epch_loss = 1e10
     done = 0
     xlk_tr_tst_bst = 1e10
     p_best = np.zeros(5)
+    num_mb = np.ceil(params.N/params.mb_size)
 
     for epoch in range(init, params.num_epochs):
         logs = open("saved_models/" + params.model_name + "/logs.txt", 'a+')
@@ -92,7 +94,7 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             if it % max(int(num_mb/12),5) == 0:
                 out = ""
                 for i in range(len(losses_new)):
-                    out+= loss_names[i] + ":" + str(np.around(losses_new[i])) + " "
+                    out+= loss_names[i] + ":" + str(np.around(losses_new[i], decimals=4)) + " "
                 print(out)
             prem = 1        
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 

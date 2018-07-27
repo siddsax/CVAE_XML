@@ -28,6 +28,7 @@ class decoder(torch.nn.Module):
             self.l0 = nn.Linear(params.Z_dim + params.y_dim, params.H_dim, bias=True)
         self.bn_l0 = nn.BatchNorm1d(params.H_dim)
         # ==================================================
+        self.l2 = nn.Linear(params.H_dim, params.X_dim, bias=True)
         self.relu = nn.ReLU()
         self.drp_5 = nn.Dropout(.5)
         self.drp_1 = nn.Dropout(.1)

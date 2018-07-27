@@ -43,7 +43,7 @@ class fnn_model_class(nn.Module):
                 z_mean, z_log_var = self.variational(batch_x, Y_sample, self.decoder.emb_layer)
                 z = sample_z(z_mean, z_log_var, self.params)
                 X_sample_from_pred_y = self.decoder(z, Y_sample)
-                dist_from_pred_y = self.params.loss_fns.logxy_loss(batch_x, X_sample_from_pred_y, self.params)
+                dist_from_pred_y = self.params.loss_fns.logxy_loss(batch_x, X_sample_from_pred_y, self.params, f=self.params.loss_type)
                 dist_from_pred_y = dist_from_pred_y.data[0]
 
             else:
