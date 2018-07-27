@@ -1,16 +1,16 @@
 from header import *
 import pdb
 sys.dont_write_bytecode = True
-# from pycrayon import CrayonClient
-
 
 # ------------------------ Params -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--pca', dest='pca_flag', type=int, default=0, help='1 to do pca, 0 for not doing it')
-parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--mb', dest='mb_size', type=int, default=100, help='Size of minibatch, changing might result in latent layer variance overflow')
+
+parser.add_argument('--zd', dest='Z_dim', type=int, default=200, help='Latent layer dimension')
 parser.add_argument('--hd', dest='h_dim', type=int, default=256, help='hidden layer dimension')
 parser.add_argument('--Hd', dest='H_dim', type=int, default=512, help='hidden layer dimension')
+
 parser.add_argument('--lr', dest='lr', type=float, default=1e-4, help='Learning Rate')
 parser.add_argument('--p', dest='plot_flg', type=int, default=0, help='1 to plot, 0 to not plot')
 parser.add_argument('--e', dest='num_epochs', type=int, default=10000, help='step for displaying loss')
@@ -25,7 +25,7 @@ parser.add_argument('--lm', dest='load_model', type=str, default="", help='model
 parser.add_argument('--ds', dest='data_set', type=str, default="Eurlex", help='dataset name')
 parser.add_argument('--fl', dest='fin_layer', type=str, default="Sigmoid", help='model name')
 parser.add_argument('--pp', dest='pp_flg', type=int, default=1, help='1 is for min-max pp, 2 is for gaussian pp, 0 for none')
-parser.add_argument('--loss', dest='loss_type', type=str, default="MSLoss", help='model name')
+parser.add_argument('--loss', dest='loss_type', type=int, default=0, help='model name')
 parser.add_argument('--clip', dest='clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='train on labeled data')
 parser.add_argument('--ss', dest='ss', type=int, default=0, help='train on labeled data')
@@ -132,7 +132,7 @@ if(params.pp_flg):
         pp = preprocessing.StandardScaler()
     
     scaler = pp.fit(x_for_pp)
-    if(x_unl is not None):
+    if(params.ss):
         x_unl = scaler.transform(x_unl)    
 
     x_tr = scaler.transform(x_tr)    
@@ -145,7 +145,7 @@ params.loss_fns = loss()
 params.X_dim = x_tr.shape[1]
 params.y_dim = y_tr.shape[1]
 params.N = x_tr.shape[0]
-if (x_unl is not None):
+if (params.ss):
     params.N_unl = x_unl.shape[0]
 else:
     params.N_unl = params.N

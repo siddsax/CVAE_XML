@@ -20,42 +20,20 @@ def isnan(x):
 
 class loss:
 
-    def MSLoss(self, X_sample, X):
-        x = (X_sample - X)
-        t = torch.mean(torch.sum(x*x,dim=1))
-        # t = torch.mean(torch.norm((X_sample - X),1),dim=0) 
-        return t
-    
-    def BCELoss(self, y_pred, y, eps = 1e-25):
-        # y_pred_1 = torch.log(y_pred+ eps)
-        # y_pred_2 = torch.log(1 - y_pred + eps)
-        # t = -torch.sum(torch.mean(y_pred_1*y + y_pred_2*(1-y),dim=0))
-        t = torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
-        if(torch.__version__=='.0.4.0'):
-		if(torch.isnan(t).any()):
-            		print("nan")
-           		pdb.set_trace()
-        	if(t<0):
-            		print("negative")            
-           		pdb.set_trace()
-        return t
-    
-    def L1Loss(self, X_sample, X):
-        t = torch.mean(torch.sum(torch.abs(X_sample - X),dim=1))
-        return t
 
     def kl(self, z_mean, z_log_var):
         kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_log_var) + z_mean**2 - 1. - z_log_var, 1))
-        
         return torch.mean(kl_loss)
 
-    def logxy_loss(self, x, x_decoded_mean, params):
-        # xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
-        xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
-        # xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
-        logy = Variable(torch.from_numpy(np.array([np.log(1. / params.y_dim)])).type(params.dtype))
+    def logxy_loss(self, x, x_decoded_mean, params, f=2):
+        if(f==0):
+            xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
+        elif(f==1):
+            xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
+        elif(f==2):
+            xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
         
-        return xent_loss# - logy
+        return xent_loss
 
     def entropy(self, x):
         b = x*torch.log(x+1e-8) + (1-x)*torch.log(1-x+1e-8)
@@ -66,21 +44,3 @@ class loss:
         # alpha = 0.1*params.N_unl/params.N
         alpha = 1
         return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
-
-    def ranking_mse_loss(self, y, y_pred, params):
-        rank_mat = np.argsort(y_pred.data.cpu().numpy())
-        v1 = y_pred.clone()
-        v2 = y.clone()
-        for i in range(y_pred.shape[0]):
-            for k in range(5):
-                v1[i,rank_mat[i, -(k+1)]] = ((k+1)**2)*y_pred[i,rank_mat[i, -(k+1)]].clone()
-                v2[i, rank_mat[i, -(k+1)]] = ((k+1)**2)*y[i,rank_mat[i, -(k+1)]].clone()
-        return torch.nn.functional.mse_loss(v1, v2)*y.shape[-1]
-
-    def log_standard_categorical(self, p):
-        prior = torch.nn.functional.softmax(torch.ones_like(p), dim=1)
-        prior.requires_grad = False
-
-        cross_entropy = -torch.sum(p * torch.log(prior + 1e-8), dim=1)
-
-        return cross_entropy

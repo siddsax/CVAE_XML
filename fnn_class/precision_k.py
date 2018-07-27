@@ -16,7 +16,7 @@ def precision_k(true_mat, score_mat,k):
     
     out = ""
     for i in range(len(p)):
-        out += str(i) + ":" + str(p[i]) + " " 
+        out += str(i) + ":" + str(np.around(p[i], decimals=2)) + " " 
     print(out)
     return p
 

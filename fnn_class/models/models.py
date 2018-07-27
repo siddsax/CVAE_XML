@@ -2,36 +2,36 @@ from header import *
 import pdb
 from weights_init import weights_init
 
-class encoder(torch.nn.Module):
+# class encoder(torch.nn.Module):
 
-    def __init__(self, params):
+#     def __init__(self, params):
         
-        super(encoder, self).__init__()
-        self.l0 = nn.Linear(params.X_dim, params.H_dim, bias=True)
-        self.relu = nn.ReLU()
-        self.drp_5 = nn.Dropout(.5)
-        self.drp_1 = nn.Dropout(.1)
-        self.bn = nn.BatchNorm1d(params.H_dim)
-        self.bn_1 = nn.BatchNorm1d(params.h_dim)
-        self.l2 = nn.Linear(params.H_dim, params.h_dim, bias=True)
+#         super(encoder, self).__init__()
+#         self.l0 = nn.Linear(params.X_dim, params.H_dim, bias=True)
+#         self.relu = nn.ReLU()
+#         self.drp_5 = nn.Dropout(.5)
+#         self.drp_1 = nn.Dropout(.1)
+#         self.bn = nn.BatchNorm1d(params.H_dim)
+#         self.bn_1 = nn.BatchNorm1d(params.h_dim)
+#         self.l2 = nn.Linear(params.H_dim, params.h_dim, bias=True)
 
-        weights_init(self.l0.weight)
-        weights_init(self.l2.weight)
+#         weights_init(self.l0.weight)
+#         weights_init(self.l2.weight)
         
-    def forward(self, inputs):
+#     def forward(self, inputs):
         
-        o = self.drp_5(inputs)
-        o = self.l0(o)
-        # o = self.bn(o)
-        o = self.relu(o)
-        o = self.drp_1(o)
-        # ---------------------------------------
-        o = self.l2(o)
-        o = self.bn_1(o)
-        o = self.relu(o)
-        # o = self.drp_1(o)
-        #----------------------------------------
-	return o
+#         o = self.drp_5(inputs)
+#         o = self.l0(o)
+#         # o = self.bn(o)
+#         o = self.relu(o)
+#         # o = self.drp_1(o)
+#         # ---------------------------------------
+#         o = self.l2(o)
+#         o = self.bn_1(o)
+#         o = self.relu(o)
+#         # o = self.drp_1(o)
+#         #----------------------------------------
+# 	return o
 
 # class variational(torch.nn.Module):
     
@@ -65,13 +65,11 @@ class variational(torch.nn.Module):
         self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
         if(self.params.layer_y):
             self.l0 = nn.Linear(params.X_dim + params.e_dim, params.H_dim, bias=True)
+            self.bn_cat = nn.BatchNorm1d(params.X_dim + params.e_dim)
         else:
             self.l0 = nn.Linear(params.X_dim + params.y_dim, params.H_dim, bias=True)
+            self.bn_cat = nn.BatchNorm1d(params.X_dim + params.y_dim)
 
-        if(self.params.layer_y):
-            self.l0 = nn.Linear(params.X_dim + params.e_dim, params.H_dim, bias=True)
-        else:
-            self.l0 = nn.Linear(params.X_dim + params.y_dim, params.H_dim, bias=True)
         self.relu = nn.ReLU()
         self.drp_5 = nn.Dropout(.5)
         self.drp_1 = nn.Dropout(.1)
@@ -90,27 +88,19 @@ class variational(torch.nn.Module):
     def forward(self, X, y, layer):
         
         if(self.params.layer_y):
-            # y = layer(y)/torch.sum(y, dim=1).view(-1,1)
-            # import pdb
-            # pdb.set_trace()
             y_sum = torch.sum(y, dim=1).view(-1,1)
             divisor = torch.max(y_sum, Variable(torch.ones(y_sum.shape).type(self.params.dtype)))
             y = torch.mm(y, Variable(self.w2v_w))
             y = y/divisor
-            # y = layer(y)
-            # y = self.relu(y)
-        X = self.drp_5(X)
         o = torch.cat((y,X), dim=-1)
+        o = self.bn_cat(o)
+        # ---------------------------------------
+
         o = self.l0(o)
-        # o = self.bn(o)
         o = self.relu(o)
-        o = self.drp_1(o)
         # ---------------------------------------
         o = self.l2(o)
-        o = self.bn_1(o)
         o = self.relu(o)
-        # o = self.drp_1(o)
-        # ---------------------------------------
         # ---------------------------------------
         o_ = self.mu(o)
         o__ = self.var(o)
@@ -146,15 +136,11 @@ class classifier(torch.nn.Module):
         o = self.drp_1(o)
         # ---------------------------------------
         o = self.l1(o)
-        # o = self.bn_1(o)
         o = self.relu(o)
-        # o = self.drp_1(o)
         # ---------------------------------------
-        # ---------------------------------------
-        o = self.drp_1(o) # added
+        o = self.drp_1(o)
         o = self.l2(o)
         o = self.l3(o)
-        # if(type(self.l3)!=str):
         return o
 
 

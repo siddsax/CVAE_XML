@@ -16,78 +16,66 @@ def losses_add(list_of_losses, losses=None):
     return losses
 
 def train(x_tr, y_tr, x_te, y_te, x_unl, params):
-    viz = Visdom()
-    loss_best = 1e10
-    kl_b = 1e10
-    lk_b = 1e10
-    loss_best2 = 1e10
-    num_mb = np.ceil(params.N/(params.mb_size/params.ratio))
-    best_epch_loss = 1e10
     best_test_loss = 1e10
     init = 0
-    loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'lossU', 'entropy', 'labeled_loss']
+    loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'dist_l1', 'dist_bce', "zero_dist", 'dist_mse', 'lossU', 'entropy', 'dist', 'kl_loss']
     model = fnn_model_class(params)
     
     if not os.path.exists('saved_models/' + params.model_name ):
         os.makedirs('saved_models/' + params.model_name)
     logs = open("saved_models/" + params.model_name + "/logs.txt", 'w+')
-    # pdb.set_trace()
     logs.write(str(model))
     logs.write('\n')
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()), lr=params.lr)
-    # import pdb
-    # pdb.set_trace()
     if(torch.cuda.is_available()):
         model = model.cuda()
         print("--------------- Using GPU! ---------")
     else:
         print("=============== Using CPU =========")
+
     if(len(params.load_model)):
         print(params.load_model)
         if(params.freezing):
             model = load_model(model, params.load_model + "/model_best_test")
-            model.eval()
-            best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
-            print("*"*75)
-            model.train()
         else:
             model, optimizer, init = load_model(model, params.load_model + "/model_best_test", optimizer)
+        model.eval()
+        best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
+        print("*"*75)
+        model.train()
 
-    prem = 0
-    kt = 0
-    recon_loss_tst_old = 0
     re_tr_old = 0.0
     xlk_tr_old = 0.0
     tr_old = 0.0
     done = 0
     xlk_tr_tst_bst = 1e10
-
     p_best = np.zeros(5)
+
     for epoch in range(init, params.num_epochs):
         logs = open("saved_models/" + params.model_name + "/logs.txt", 'a+')
+        prem = 0
         for it in range(int(num_mb)):
-            kt +=1
             if(params.train_labels):
                 params.mb_size /= params.ratio
                 X, Y = load_data(x_tr, y_tr, params)
                 params.mb_size *= params.ratio 
-                lossL, recon_loss, dist, kl_loss = model(X, Y)
-                losses_new = [lossL.data[0], recon_loss, dist, kl_loss]
+                lossL, recon_loss, dist, kl_loss, dist_l1, dist_bce, dist_mse = model(X, Y)
+                zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.zeros(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
+                losses_new = [lossL.data[0], recon_loss, dist,kl_loss, dist_l1, dist_bce, dist_mse, zero_dist]
             else:
-                losses_new = [0.0, 0.0, 0.0, 0.0]
-
-            if(x_unl is not None):
+                losses_new = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            if(params.ss):
                 dummy = np.zeros(np.shape(x_unl))
                 XU, _ = load_data(x_unl, dummy, params) ###### using dummy as dummy
-                lossU, entropy, labeled_loss = model(XU)
-                losses_new += [lossU.data[0], entropy, labeled_loss]
+                lossU, entropy, dist, kl_loss = model(XU)
+                losses_new += [lossU.data[0], entropy, dist, kl_loss]
 
-            if(x_unl is not None and params.train_labels): 
+            if(params.ss and params.train_labels): 
                 lossF = lossL + lossU
             elif(params.train_labels):
                 lossF = lossL
-            elif(x_unl is not None):
+            elif(params.ss):
                 lossF = lossU
             else:
                 print("Error, neither labeled or unlabeled data give")
@@ -104,10 +92,7 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             if it % max(int(num_mb/12),5) == 0:
                 out = ""
                 for i in range(len(losses_new)):
-                    out+= loss_names[i] + ":" + str(losses_new[i]) + " "
-                
-                zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.zeros(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
-                out += "zero loss" + ":" + str(zero_dist)
+                    out+= loss_names[i] + ":" + str(np.around(losses_new[i])) + " "
                 print(out)
             prem = 1        
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 
@@ -115,11 +100,12 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             losses[i] /= num_mb
         if(losses[0]<best_epch_loss):
             best_epch_loss = losses[0]
-            save_model(model, optimizer, epoch, params, "/model_best")
+            save_model(model, optimizer, epoch, params, "/model_best_train")
+
         out="Model Name :" + params.model_name + " Epoch No: " + str(epoch) + " "
         print("="*50)            
         for i in range(len(losses_new)):
-            out+= loss_names[i] + ":" + str(losses[i]) + " "
+            out+= loss_names[i] + ":" + str(np.around(losses[i], decimals=3)) + " "
         
         best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
         
@@ -128,10 +114,10 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             print("====== New REGEN-GOAT =====")
             save_model(model,optimizer, epoch,params, "/model_best_test_regen")
         
-        out += "regen best test: " + str(xlk_tr_tst_bst) + " "
+        out += "regen best test: " + str(np.around(xlk_tr_tst_bst, decimals=3)) + " "
 
         print(out)
-        out = out + "recon_loss_tst: " + str(recon_loss_tst) + " P_1 " + str(p_new[0]) + "\n"
+        out = out + "recon_loss_tst: " + str(np.around(recon_loss_tst, decimals=3)) + " P_1 " + str(p_new[0]) + "\n"
         logs.write(out)
         logs.close()
         
@@ -146,22 +132,25 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             
         print("="*50)
         
-        if(epoch%100==0):
+        if(epoch%100==0 or done == 0):
             plt.gcf().clear()
-        if(done==1):
             ax1 = plt.subplot(3, 1, 1)
+            ax2 = plt.subplot(3, 1, 2)
+            ax3 = plt.subplot(3, 1, 3)
+            ax1.set_ylim(bottom=0, top=1.5*losses[2])
+            ax2.set_ylim(bottom=0, top=1.5*losses[3])
+            ax3.set_ylim(bottom=0, top=1.5*losses[0])
+        if(done==1):
             ax1.scatter(np.linspace(epoch-1,epoch,50), np.linspace(recon_loss_tst_old, recon_loss_tst,50),color='blue', s=1)
             ax1.scatter(np.linspace(epoch-1,epoch,50), np.linspace(re_tr_old, losses[2],50),color='red', s=1)
-            ax1.set_ylim(bottom=0)
-            
-            ax2 = plt.subplot(3, 1, 2)
+            ax1.set_xlabel('Classification Error')
+
             ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old_tst, xlk_tr_tst,50),color='blue', s=1)
             ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old, losses[3],50),color='red', s=1)
-            ax2.set_ylim(bottom=0)
+            ax1.set_xlabel('Reconstruction Error')
             
-            ax3 = plt.subplot(3, 1, 3)
             ax3.scatter(np.linspace(epoch-1,epoch,50), np.linspace(tr_old, losses[0],50),color='blue', s=1)
-            ax3.set_ylim(bottom=0)
+            ax1.set_xlabel('Training Error')
             plt.savefig(params.model_name + ".png")
             plt.pause(0.05)
 
@@ -171,25 +160,3 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
         re_tr_old = losses[2]
         xlk_tr_old = losses[3]
         tr_old = losses[0]
-
-        if(epoch%params.save_step==0):
-            save_model(model, optimizer, epoch,params, "/model_" + str(epoch))
-            
-
-
-        # if(params.disp_flg):
-        #     losses_now = [loss.data[0]]#, kl_loss, recon_loss]
-        #     if(epoch==0):
-        #             losses_epch = losses_update(losses_now)
-        #     else:
-        #             # print(losses)
-        #             for j in range(len(losses)):
-        #                 viz.line(X=np.linspace(it2-1,it2,50), Y=np.linspace(losses[j], losses_now[j],50),name=str(j), update='append', win=win)
-        #             losses = losses_update(losses_now, losses)
-        #     if(it2 % 100 == 0 ):
-        #             win = viz.line(X=np.arange(it2, it2 + .1), Y=np.arange(0, .1))
-        #     it2 += 1
-
-        
-
-    plt.show()

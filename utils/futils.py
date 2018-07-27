@@ -50,7 +50,11 @@ def effective_k(k, d):
     return (k - 1) * d + 1
 
 def load_model(model, name, optimizer=None):
-    checkpoint = torch.load(name)#, map_location=lambda storage, loc: storage)
+    if(torch.cuda.is_available()):
+        checkpoint = torch.load(name)
+    else:
+        checkpoint = torch.load(name, map_location=lambda storage, loc: storage)
+        
     model.load_state_dict(checkpoint['state_dict'])
     
     if optimizer is not None:
