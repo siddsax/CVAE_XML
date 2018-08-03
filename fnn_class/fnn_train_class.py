@@ -52,7 +52,7 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     done = 0
     xlk_tr_tst_bst = 1e10
     p_best = np.zeros(5)
-    num_mb = np.ceil(params.N/params.mb_size)
+    num_mb = np.ceil(params.N/params.mb_size)*params.ratio
 
     for epoch in range(init, params.num_epochs):
         logs = open("saved_models/" + params.model_name + "/logs.txt", 'a+')
@@ -86,6 +86,19 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
 
             # ------------------------ Propogate loss -----------------------------------
             lossF.backward()
+            # torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+            # for p in model.parameters():
+            #     if p.grad is not None:
+            #         flag = np.isnan(p.grad.data.cpu().numpy()).any()
+            #         if flag:
+            #             print(" Naans cooking up! ")
+            #             import pdb
+            #             pdb.set_trace()
+            #         flag = np.isinf(p.grad.data.cpu().numpy()).any()
+            #         if flag:
+            #             print("Limitless! ")
+            #             import pdb
+            #             pdb.set_trace()
             optimizer.step()
             optimizer.zero_grad()
 

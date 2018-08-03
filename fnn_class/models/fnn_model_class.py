@@ -2,7 +2,6 @@ from header import *
 import math
 import pdb
 from models import *
-from decoder_classify import *
 
 def isnan(tensor):
     flag = (tensor != tensor).any()
@@ -14,7 +13,7 @@ class fnn_model_class(nn.Module):
         self.decoder = decoder(params)
         self.variational = variational(params)
         self.classifier = classifier(params)
-        self.beta = 0
+        self.beta = 0.1
         self.gamma = 1.0
         if(params.freezing):
             for param in self.variational.parameters():
@@ -32,11 +31,11 @@ class fnn_model_class(nn.Module):
             dist = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=self.params.loss_type)
 
             dist_l1 = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=0).data.cpu().numpy()[0]
-            dist_bce = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=1).data.cpu().numpy()[0]
+            dist_bce = -1.0#self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=1).data.cpu().numpy()[0]
             dist_mse = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=2).data.cpu().numpy()[0]
 
             recon_loss = self.params.loss_fns.cls_loss(batch_y, Y_sample, self.params)
-            
+
             if(test):
                 kl_loss = 0.0
                 loss = dist + recon_loss
@@ -45,7 +44,16 @@ class fnn_model_class(nn.Module):
                 X_sample_from_pred_y = self.decoder(z, Y_sample)
                 dist_from_pred_y = self.params.loss_fns.logxy_loss(batch_x, X_sample_from_pred_y, self.params, f=self.params.loss_type)
                 dist_from_pred_y = dist_from_pred_y.data[0]
-
+                import pdb
+                # if isnan(kl_loss) and isnan(dist):
+                #     print("kl_loss and dist are nan")
+                #     pdb.set_trace()
+                if isnan(dist):
+                    print("dist")
+                    pdb.set_trace()
+                # elif isnan(kl_loss):
+                #     print("kl")
+                #     pdb.set_trace()
             else:
                 kl_loss = self.beta*self.params.loss_fns.kl(z_mean, z_log_var)
                 loss = self.gamma*recon_loss + kl_loss + dist
@@ -59,9 +67,9 @@ class fnn_model_class(nn.Module):
                 elif isnan(kl_loss):
                     print("kl")
                     pdb.set_trace()
-                
+
                 kl_loss = kl_loss.data[0]
-            
+
             recon_loss = recon_loss.data[0]
             dist = dist.data[0]
             if(test):
@@ -80,9 +88,9 @@ class fnn_model_class(nn.Module):
                 kl_loss = 0.0
                 labeled_loss = dist
             else:
-                kl_loss = self.beta*self.params.loss_fns.kl(z_mean, z_log_var)
-                labeled_loss = dist + kl_loss
-                kl_loss = kl_loss.data[0]
+                kl_loss = self.beta#*self.params.loss_fns.kl(z_mean, z_log_var)
+                labeled_loss = dist# + kl_loss
+                # kl_loss = kl_loss.data[0]
                 dist = dist.data[0]
             loss = labeled_loss #+ entropy
             entropy = entropy.data[0]

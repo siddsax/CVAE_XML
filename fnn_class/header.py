@@ -18,7 +18,6 @@ from sklearn.decomposition import PCA
 import scipy.io as sio
 from scipy import sparse
 # from encoder_classify import encoder
-from decoder_classify import decoder
 import argparse
 from visdom import Visdom
 from sklearn.externals import joblib 

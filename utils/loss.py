@@ -29,17 +29,22 @@ class loss:
         if(f==0):
             xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
         elif(f==1):
+            x_sum = torch.sum(x_decoded_mean, dim=1)
+            if(np.any(x_sum.data.cpu().numpy()==0)):
+                return torch.autograd.Variable(torch.from_numpy(-1*np.ones(1)).type(params.dtype))
             xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
         elif(f==2):
             xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]
-        
+        if(np.isnan(xent_loss.data.cpu().numpy()).any()):
+            import pdb
+            pdb.set_trace
         return xent_loss
 
     def entropy(self, x):
         b = x*torch.log(x+1e-8) + (1-x)*torch.log(1-x+1e-8)
         b = -1.0 * b.mean()*x.shape[-1]
         return b
-    
+
     def cls_loss(self, y, y_pred, params):
         # alpha = 0.1*params.N_unl/params.N
         alpha = 1
