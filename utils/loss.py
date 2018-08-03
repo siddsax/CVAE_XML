@@ -29,9 +29,9 @@ class loss:
         if(f==0):
             xent_loss = torch.nn.functional.l1_loss(x_decoded_mean, x)*x.shape[-1]
         elif(f==1):
-            x_sum = torch.sum(x_decoded_mean, dim=1)
-            if(np.any(x_sum.data.cpu().numpy()==0)):
-                return torch.autograd.Variable(torch.from_numpy(-1*np.ones(1)).type(params.dtype))
+            # x_sum = torch.sum(x_decoded_mean, dim=1)
+            # if(np.any(x_sum.data.cpu().numpy()==0)):
+            #     return torch.autograd.Variable(torch.from_numpy(-1*np.ones(1)).type(params.dtype))
             xent_loss = torch.nn.functional.binary_cross_entropy(x_decoded_mean, x)*x.shape[-1]
         elif(f==2):
             xent_loss = torch.nn.functional.mse_loss(x_decoded_mean, x)*x.shape[-1]

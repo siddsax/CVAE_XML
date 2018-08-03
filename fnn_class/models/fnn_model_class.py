@@ -13,7 +13,7 @@ class fnn_model_class(nn.Module):
         self.decoder = decoder(params)
         self.variational = variational(params)
         self.classifier = classifier(params)
-        self.beta = 0.1
+        self.beta = 0#.1
         self.gamma = 1.0
         if(params.freezing):
             for param in self.variational.parameters():
@@ -23,15 +23,15 @@ class fnn_model_class(nn.Module):
 
     def forward(self, batch_x, batch_y=None, test=0):
 
-        if(batch_y is not None):        
+        if(batch_y is not None):
             z_mean, z_log_var = self.variational(batch_x, batch_y, self.decoder.emb_layer)
-            z = sample_z(z_mean, z_log_var, self.params)
+            # z = sample_z(z_mean, z_log_var, self.params)
             Y_sample = self.classifier(batch_x)
-            X_sample = self.decoder(z, batch_y)
+            X_sample = self.decoder(z_mean, batch_y)
             dist = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=self.params.loss_type)
 
             dist_l1 = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=0).data.cpu().numpy()[0]
-            dist_bce = -1.0#self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=1).data.cpu().numpy()[0]
+            dist_bce = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=1).data.cpu().numpy()[0]
             dist_mse = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=2).data.cpu().numpy()[0]
 
             recon_loss = self.params.loss_fns.cls_loss(batch_y, Y_sample, self.params)
@@ -40,8 +40,8 @@ class fnn_model_class(nn.Module):
                 kl_loss = 0.0
                 loss = dist + recon_loss
                 z_mean, z_log_var = self.variational(batch_x, Y_sample, self.decoder.emb_layer)
-                z = sample_z(z_mean, z_log_var, self.params)
-                X_sample_from_pred_y = self.decoder(z, Y_sample)
+                # z = sample_z(z_mean, z_log_var, self.params)
+                X_sample_from_pred_y = self.decoder(z_mean, Y_sample)
                 dist_from_pred_y = self.params.loss_fns.logxy_loss(batch_x, X_sample_from_pred_y, self.params, f=self.params.loss_type)
                 dist_from_pred_y = dist_from_pred_y.data[0]
                 import pdb
@@ -55,20 +55,20 @@ class fnn_model_class(nn.Module):
                 #     print("kl")
                 #     pdb.set_trace()
             else:
-                kl_loss = self.beta*self.params.loss_fns.kl(z_mean, z_log_var)
+                kl_loss = self.beta#*self.params.loss_fns.kl(z_mean, z_log_var)
                 loss = self.gamma*recon_loss + kl_loss + dist
                 import pdb
-                if isnan(kl_loss) and isnan(dist):
-                    print("kl_loss and dist are nan")
-                    pdb.set_trace()
-                elif isnan(dist):
+                # if isnan(kl_loss) and isnan(dist):
+                #     print("kl_loss and dist are nan")
+                #     pdb.set_trace()
+                if isnan(dist):
                     print("dist")
                     pdb.set_trace()
-                elif isnan(kl_loss):
-                    print("kl")
-                    pdb.set_trace()
+                # elif isnan(kl_loss):
+                #     print("kl")
+                #     pdb.set_trace()
 
-                kl_loss = kl_loss.data[0]
+                # kl_loss = kl_loss.data[0]
 
             recon_loss = recon_loss.data[0]
             dist = dist.data[0]
@@ -79,8 +79,8 @@ class fnn_model_class(nn.Module):
         else:
             Y_sample = self.classifier(batch_x)
             z_mean, z_log_var = self.variational(batch_x, Y_sample, self.decoder.l0)
-            z = sample_z(z_mean, z_log_var, self.params)
-            X_sample = self.decoder(z, Y_sample)
+            # z = sample_z(z_mean, z_log_var, self.params)
+            X_sample = self.decoder(z_mean, Y_sample)
             dist = self.params.loss_fns.logxy_loss(batch_x, X_sample, self.params, f=self.params.loss_type)
 
             entropy = self.params.loss_fns.entropy(Y_sample)
