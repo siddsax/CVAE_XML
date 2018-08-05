@@ -44,10 +44,16 @@ print('Saving Model to: ' + params.model_name)
 print('Boom 0')
 
 if(params.data_set=="Wiki"):
-    x_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/x.npz')#.dense() # Prepocessed
-    y_tr = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/y.npz')#.dense()
-    x_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/tx.npz')#.dense()
-    y_te = sparse.load_npz('/scratch/work/saxenas2/CVAE_XML/datasets/Wiki/ty.npz')#.dense()
+    x_tr = sparse.load_npz('../datasets/Wiki/x_pp.npz')#.dense() # Prepocessed
+    y_tr = sparse.load_npz('../datasets/Wiki/y.npz')#.dense()
+    x_te = sparse.load_npz('../datasets/Wiki/tx_pp.npz')#.dense()
+    y_te = sparse.load_npz('../datasets/Wiki/ty.npz')#.dense()
+    #x_for_pp = x_tr
+    x_unl = None
+    params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
+    params.e_dim = params.w2v_w.shape[1]
+    params.ratio = 1
+
 elif(params.data_set=="Eurlex"):
     # x_tr = np.load('../datasets/Eurlex/manik/x_tr.npy')
     # y_tr = np.load('../datasets/Eurlex/manik/y_tr.npy')
@@ -126,7 +132,7 @@ elif(params.data_set=="Eurlex"):
 
 
 # -------------------------- PP -------------------------------------------
-if(params.pp_flg):
+if(params.pp_flg and params.data_set=="Eurlex"):
     if(params.pp_flg==1):
         pp = preprocessing.MinMaxScaler()
     elif(params.pp_flg==2):
