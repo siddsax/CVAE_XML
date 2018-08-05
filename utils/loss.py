@@ -47,5 +47,5 @@ class loss:
 
     def cls_loss(self, y, y_pred, params):
         # alpha = 0.1*params.N_unl/params.N
-        alpha = 1
+        alpha = .1
         return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]

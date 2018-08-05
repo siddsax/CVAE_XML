@@ -31,6 +31,7 @@ parser.add_argument('--trlb', dest='train_labels', type=int, default=1, help='tr
 parser.add_argument('--ss', dest='ss', type=int, default=0, help='train on labeled data')
 parser.add_argument('--ly', dest='layer_y', type=int, default=1, help='layer over labels')
 parser.add_argument('--f', dest='freezing', type=int, default=0, help='layer over labels')
+parser.add_argument('--res', dest='decoderRes', type=int, default=0, help='Residual connections')
 
 params = parser.parse_args()
 

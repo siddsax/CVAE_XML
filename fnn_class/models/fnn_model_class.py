@@ -10,8 +10,13 @@ class fnn_model_class(nn.Module):
     def __init__(self, params):
         super(fnn_model_class, self).__init__()
         self.params = params
-        self.decoder = decoder(params)
-        self.variational = variational(params)
+        if(params.decoderRes):
+            self.decoder = decoderRes(params)
+            self.variational = variationalRes(params)
+        else:
+            self.decoder = decoder(params)
+            self.variational = variational(params)
+
         self.classifier = classifier(params)
         self.beta = 0#.1
         self.gamma = 1.0
@@ -38,7 +43,7 @@ class fnn_model_class(nn.Module):
 
             if(test):
                 kl_loss = 0.0
-                loss = dist + recon_loss
+                loss = dist #+ recon_loss
                 z_mean, z_log_var = self.variational(batch_x, Y_sample, self.decoder.emb_layer)
                 # z = sample_z(z_mean, z_log_var, self.params)
                 X_sample_from_pred_y = self.decoder(z_mean, Y_sample)
@@ -56,7 +61,7 @@ class fnn_model_class(nn.Module):
                 #     pdb.set_trace()
             else:
                 kl_loss = self.beta#*self.params.loss_fns.kl(z_mean, z_log_var)
-                loss = self.gamma*recon_loss + kl_loss + dist
+                loss = 0.0*recon_loss + kl_loss + dist
                 import pdb
                 # if isnan(kl_loss) and isnan(dist):
                 #     print("kl_loss and dist are nan")
