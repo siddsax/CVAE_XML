@@ -79,6 +79,11 @@ elif(params.data_set=="Eurlex"):
     params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights_labels.npy')
     params.e_dim = params.w2v_w.shape[1]
 
+    wt = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights_features.npy')
+    #print(x_tr.shape)
+    #print(wt.shape)
+    #x_tr = np.dot(x_tr, wt)/np.sum(x_tr, axis=1).reshape((x_tr.shape[0], 1))
+    #x_te = np.dot(x_te, wt)/np.sum(x_te, axis=1).reshape((x_te.shape[0], 1))
 # ----------------------------------------------------------------------
  
 # x_tr = x_tr[0:20]
