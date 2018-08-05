@@ -152,6 +152,7 @@ params.loss_fns = loss()
 params.X_dim = x_tr.shape[1]
 params.y_dim = y_tr.shape[1]
 params.N = x_tr.shape[0]
+
 if (params.ss):
     params.N_unl = x_unl.shape[0]
 else:
