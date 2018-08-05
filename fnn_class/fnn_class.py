@@ -50,7 +50,7 @@ if(params.data_set=="Wiki"):
     y_te = sparse.load_npz('../datasets/Wiki/ty.npz')#.dense()
     #x_for_pp = x_tr
     x_unl = None
-    params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
+    params.w2v_w = np.zeros((3956, 300))#np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
     params.e_dim = params.w2v_w.shape[1]
     params.ratio = 1
 
@@ -76,7 +76,7 @@ elif(params.data_set=="Eurlex"):
     x_te = np.load('../datasets/Eurlex/eurlex_docs/x_te.npy')
     y_te = np.load('../datasets/Eurlex/eurlex_docs/y_te.npy')
 
-    params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights.npy')
+    params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights_labels.npy')
     params.e_dim = params.w2v_w.shape[1]
 
 # ----------------------------------------------------------------------
