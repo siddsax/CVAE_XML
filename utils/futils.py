@@ -54,16 +54,16 @@ def load_model(model, name, optimizer=None):
         checkpoint = torch.load(name)
     else:
         checkpoint = torch.load(name, map_location=lambda storage, loc: storage)
-        
+
     model.load_state_dict(checkpoint['state_dict'])
-    
+
     if optimizer is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
         init = checkpoint['epoch']
         return model, optimizer, init
     else:
         return model
-        
+
 def save_model(model, optimizer, epoch, params, name):
     if not os.path.exists('saved_models/' + params.model_name ):
         os.makedirs('saved_models/' + params.model_name)
@@ -100,13 +100,13 @@ def load_data(X, Y, params, batch=True):
             X, c = X[a].todense(), Y[a].todense()
         else:
             X, c = X[a], Y[a]
-            
+
     else:
         if isinstance(X, scipy.sparse.csr.csr_matrix) or isinstance(X, scipy.sparse.csc.csc_matrix):
             X, c = X.todense(), Y.todense()
         else:
             X, c = X, Y
-    
+
     X = Variable(torch.from_numpy(X.astype('float32')).type(params.dtype))
     Y = Variable(torch.from_numpy(c.astype('float32')).type(params.dtype))
     return X,Y
@@ -238,3 +238,4 @@ def sample_word_from_distribution(params, distribution):
     x = np.zeros((params.vocab_size, 1))
     x[ix] = 1
     return params.vocabulary_inv[np.argmax(x)]
+

@@ -20,7 +20,7 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     init = 0
     loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'dist_l1', 'dist_bce', 'dist_mse', "zero_dist", 'lossU', 'entropy', 'dist', 'kl_loss']
     model = fnn_model_class(params)
-    
+    print(model)
     if not os.path.exists('saved_models/' + params.model_name ):
         os.makedirs('saved_models/' + params.model_name)
     logs = open("saved_models/" + params.model_name + "/logs.txt", 'w+')
