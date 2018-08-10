@@ -81,24 +81,29 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
                 lossF = lossU
             else:
                 print("Error, neither labeled or unlabeled data give")
-                exit()                    
+                exit()
             losses_new = [lossF.data[0]] + losses_new
 
             # ------------------------ Propogate loss -----------------------------------
             lossF.backward()
-            # torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
-            # for p in model.parameters():
-            #     if p.grad is not None:
-            #         flag = np.isnan(p.grad.data.cpu().numpy()).any()
-            #         if flag:
-            #             print(" Naans cooking up! ")
-            #             import pdb
-            #             pdb.set_trace()
-            #         flag = np.isinf(p.grad.data.cpu().numpy()).any()
-            #         if flag:
-            #             print("Limitless! ")
-            #             import pdb
-            #             pdb.set_trace()
+            torch.nn.utils.clip_grad_norm(model.parameters(), params.clip)
+            for p in model.parameters():
+                if p.grad is not None:
+                    flag = np.isnan(p.grad.data.cpu().numpy()).any()
+                    if flag:
+                        losses = losses_add(losses_new, losses) if prem else losses_add(losses_new)
+                        out = ""
+                        for i in range(len(losses_new)):
+                            out+= loss_names[i] + ":" + str(np.around(losses_new[i], decimals=4)) + " "
+                        print(out)
+                        print(" Naans cooking up! ")
+                        import pdb
+                        pdb.set_trace()
+                    flag = np.isinf(p.grad.data.cpu().numpy()).any()
+                    if flag:
+                        print("Limitless! ")
+                        import pdb
+                        pdb.set_trace()
             optimizer.step()
             optimizer.zero_grad()
 
@@ -109,69 +114,74 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
                 for i in range(len(losses_new)):
                     out+= loss_names[i] + ":" + str(np.around(losses_new[i], decimals=4)) + " "
                 print(out)
-            prem = 1        
+            prem = 1
         # ------------------- Save Model, Run on test data and find mean loss in epoch ----------------- 
-        for i in range(len(losses)):
-            losses[i] /= num_mb
-        if(losses[0]<best_epch_loss):
-            best_epch_loss = losses[0]
-            save_model(model, optimizer, epoch, params, "/model_best_train")
+        print("="*50)    
+        if (params.justClassify == 0 or epoch % 5 == 0):
+            for i in range(len(losses)):
+                losses[i] /= num_mb
+            if(losses[0]<best_epch_loss):
+                best_epch_loss = losses[0]
+                save_model(model, optimizer, epoch, params, "/model_best_train")
 
-        out="Model Name :" + params.model_name + " Epoch No: " + str(epoch) + " "
-        print("="*50)            
-        for i in range(len(losses_new)):
-            out+= loss_names[i] + ":" + str(np.around(losses[i], decimals=3)) + " "
-        
-        best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
-        
-        if(xlk_tr_tst < xlk_tr_tst_bst):
-            xlk_tr_tst_bst = xlk_tr_tst
-            print("====== New REGEN-GOAT =====")
-            save_model(model,optimizer, epoch,params, "/model_best_test_regen")
-        
-        out += "regen best test: " + str(np.around(xlk_tr_tst_bst, decimals=3)) + " "
+            out="Model Name :" + params.model_name + " Epoch No: " + str(epoch) + " "
+            for i in range(len(losses_new)):
+                out+= loss_names[i] + ":" + str(np.around(losses[i], decimals=3)) + " "
 
-        print(out)
-        out = out + "recon_loss_tst: " + str(np.around(recon_loss_tst, decimals=3)) + " P_1 " + str(p_new[0]) + "\n"
-        logs.write(out)
-        logs.close()
-        
-        out = ""
-        if(p_best[0]< p_new[0]):
-            p_best = p_new
-            print("====== New GOAT =====")
-            save_model(model,optimizer, epoch,params, "/model_best_test")
-        for i in range(len(p_best)):
-            out += str(i) + ":" + str(p_best[i]) + " "
-        print(out)
-            
-        print("="*50)
-        
-        if(epoch%100==0 or done == 0):
-            plt.gcf().clear()
-            ax1 = plt.subplot(3, 1, 1)
-            ax2 = plt.subplot(3, 1, 2)
-            ax3 = plt.subplot(3, 1, 3)
-            ax1.set_ylim(bottom=0, top=1.5*losses[2])
-            ax2.set_ylim(bottom=0, top=1.5*losses[3])
-            ax3.set_ylim(bottom=0, top=1.5*losses[0])
-        if(done==1):
-            ax1.scatter(np.linspace(epoch-1,epoch,50), np.linspace(recon_loss_tst_old, recon_loss_tst,50),color='blue', s=1)
-            ax1.scatter(np.linspace(epoch-1,epoch,50), np.linspace(re_tr_old, losses[2],50),color='red', s=1)
-            ax1.set_xlabel('Classification Error')
+            best_test_loss,p_new, recon_loss_tst, xlk_tr_tst = test(x_te, y_te, params, model=model, best_test_loss=best_test_loss)
 
-            ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old_tst, xlk_tr_tst,50),color='blue', s=1)
-            ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old, losses[3],50),color='red', s=1)
-            ax1.set_xlabel('Reconstruction Error')
-            
-            ax3.scatter(np.linspace(epoch-1,epoch,50), np.linspace(tr_old, losses[0],50),color='blue', s=1)
-            ax1.set_xlabel('Training Error')
-            plt.savefig(params.model_name + ".png")
-            plt.pause(0.05)
+            if(xlk_tr_tst < xlk_tr_tst_bst):
+                xlk_tr_tst_bst = xlk_tr_tst
+                print("====== New REGEN-GOAT =====")
+                save_model(model,optimizer, epoch,params, "/model_best_test_regen")
 
-        recon_loss_tst_old = recon_loss_tst
-        xlk_tr_old_tst = xlk_tr_tst
-        done = 1
-        re_tr_old = losses[2]
-        xlk_tr_old = losses[3]
-        tr_old = losses[0]
+            out += "regen best test: " + str(np.around(xlk_tr_tst_bst, decimals=3)) + " "
+
+            print(out)
+            out = out + "recon_loss_tst: " + str(np.around(recon_loss_tst, decimals=3)) + " P_1 " + str(p_new[0]) + "\n"
+            logs.write(out)
+            logs.close()
+
+            out = ""
+            if(p_best[0]< p_new[0]):
+                p_best = p_new
+                print("====== New GOAT =====")
+                save_model(model,optimizer, epoch,params, "/model_best_test")
+            for i in range(len(p_best)):
+                out += str(i) + ":" + str(p_best[i]) + " "
+            print(out)
+
+            print("="*50)
+
+            done += 1
+            if(epoch%100==0 or done == 3):
+                plt.gcf().clear()
+                ax1 = plt.subplot(3, 1, 1)
+                ax2 = plt.subplot(3, 1, 2)
+                ax3 = plt.subplot(3, 1, 3)
+                ax1.set_xlabel('Classification Error')
+                ax2.set_xlabel('SS-Reconstruction Error')
+                ax3.set_xlabel('Training Error')
+                ax1.set_ylim(bottom=0, top=1.5*losses[2])
+                ax2.set_ylim(bottom=0, top=1.5*losses[3])
+                ax3.set_ylim(bottom=0, top=1.5*losses[0])
+            if(done>=3):
+                ax1.scatter(np.linspace(epoch-1,epoch,50), np.linspace(recon_loss_tst_old, recon_loss_tst,50),color='blue', s=1)
+                ax1.scatter(np.linspace(epoch-1,epoch,50), np.linspace(re_tr_old, losses[2],50),color='red', s=1)
+
+                # ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old_tst, xlk_tr_tst,50),color='blue', s=1)
+                # ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old, losses[3],50),color='red', s=1)
+                if(params.ss):
+                    ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(dist_ss_old, losses[11],50),color='red', s=1)
+
+                ax3.scatter(np.linspace(epoch-1,epoch,50), np.linspace(tr_old, losses[0],50),color='blue', s=1)
+                plt.savefig(params.model_name + ".png")
+                plt.pause(0.05)
+
+            recon_loss_tst_old = recon_loss_tst
+            xlk_tr_old_tst = xlk_tr_tst
+            re_tr_old = losses[2]
+            xlk_tr_old = losses[3]
+            tr_old = losses[0]
+            if(params.ss):
+                dist_ss_old = losses[11]

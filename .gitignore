@@ -14,3 +14,5 @@ clusterings
 *.png
 useful_saved_data
 utils/glove.6B.300d.txt
+fnn_class/one_label.csv
+*.lprof

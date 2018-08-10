@@ -32,6 +32,8 @@ parser.add_argument('--ss', dest='ss', type=int, default=0, help='train on label
 parser.add_argument('--ly', dest='layer_y', type=int, default=1, help='layer over labels')
 parser.add_argument('--f', dest='freezing', type=int, default=0, help='layer over labels')
 parser.add_argument('--res', dest='decoderRes', type=int, default=0, help='Residual connections')
+parser.add_argument('--t', dest='temperature', type=float, default=1.0, help='temperature')
+parser.add_argument('--jc', dest='justClassify', type=int, default=0, help='temperature')
 
 params = parser.parse_args()
 
@@ -79,23 +81,37 @@ elif(params.data_set=="Eurlex"):
     # params.w2v_w = np.load('../datasets/Eurlex/eurlex_docs/w2v_weights_labels.npy')
     # params.e_dim = params.w2v_w.shape[1]
 
-    x_for_pp = np.load('../datasets/Eurlex_XML_CNN/xTr_emb.npy')
+    # x_for_pp = np.load('../datasets/Eurlex_XML_CNN/xTr_emb.npy')
+    x_for_pp = np.load('../datasets/Eurlex_XML_CNN/xTr_tfidf.npy')
+    # x_for_pp = np.load('../datasets/Eurlex_XML_CNN/xTr_emb_5k.npy')
     if(params.ss):
-        x_unl = np.load('../datasets/Eurlex/eurlex_docs/xTr_emb.npy')
+        # x_unl = np.load('../datasets/Eurlex_XML_CNN/xTr_emb.npy')
+        x_unl = np.load('../datasets/Eurlex_XML_CNN/xTr_tfidf.npy')
+        # x_unl = np.load('../datasets/Eurlex_XML_CNN/xTr_emb_5k.npy')
         params.ratio = 5
     else:
         x_unl = None
         params.ratio = 1
-    x_tr = np.load('../datasets/Eurlex_XML_CNN/x_20.npy')
-    y_tr = np.load('../datasets/Eurlex_XML_CNN/y_20.npy')
-    x_te = np.load('../datasets/Eurlex_XML_CNN/xTe_emb.npy')
+    # x_tr = np.load('../datasets/Eurlex_XML_CNN/x_20.npy')
+    # y_tr = np.load('../datasets/Eurlex_XML_CNN/y_20.npy')
+    x_tr = np.load('../datasets/Eurlex_XML_CNN/x_20_tfidf.npy')
+    y_tr = np.load('../datasets/Eurlex_XML_CNN/y_20_tfidf.npy')
+    # x_tr = np.load('../datasets/Eurlex_XML_CNN/x_20_emb_5k.npy')
+    # y_tr = np.load('../datasets/Eurlex_XML_CNN/y_20_emb_5k.npy')
+    # x_tr = np.load('../datasets/Eurlex_XML_CNN/xTr_emb.npy')
+    # y_tr = np.load('../datasets/Eurlex_XML_CNN/lblTr.npy')
+    # x_te = np.load('../datasets/Eurlex_XML_CNN/xTe_emb.npy')
+    x_te = np.load('../datasets/Eurlex_XML_CNN/xTe_tfidf.npy')
+    # x_te = np.load('../datasets/Eurlex_XML_CNN/xTe_emb_5k.npy')
     y_te = np.load('../datasets/Eurlex_XML_CNN/lblTe.npy')
+    print(x_tr.shape)
     params.w2v_w = np.load('../datasets/Eurlex_XML_CNN/lbl_Wt.npy')
+    params.w2v_w = params.w2v_w[:y_te.shape[1], :]
     params.e_dim = params.w2v_w.shape[1]
 
 
 # ----------------------------------------------------------------------
- 
+
 # x_tr = x_tr[0:20]
 # y_tr = y_tr[0:20]
 
@@ -152,12 +168,12 @@ if(params.pp_flg and params.data_set=="Eurlex"):
         pp = preprocessing.MinMaxScaler()
     elif(params.pp_flg==2):
         pp = preprocessing.StandardScaler()
-    
+
     scaler = pp.fit(x_for_pp)
     if(params.ss):
-        x_unl = scaler.transform(x_unl)    
+        x_unl = scaler.transform(x_unl)
 
-    x_tr = scaler.transform(x_tr)    
+    x_tr = scaler.transform(x_tr)
     x_te = scaler.transform(x_te)
     print('Boom 2')
 
@@ -185,3 +201,6 @@ elif(params.testing):
     test(x_te, y_te, params)
 else:
     dig(x_tr, y_tr, x_te, y_te, params)
+
+
+# 0:[0.56119017] 1:[0.4771022] 2:[0.42492454] 3:[0.38253558] 4:[0.34701164] 

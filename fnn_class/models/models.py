@@ -11,9 +11,9 @@ class variational(torch.nn.Module):
         # ---------------------------------------------------------------
 
         self.params = params
-        self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
-        self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
-        self.emb_layer.weight.requires_grad = False
+        # self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
+        # self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
+        # self.emb_layer.weight.requires_grad = False
         self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
         if(self.params.layer_y):
             self.l0 = nn.Linear(params.X_dim + params.e_dim, params.H_dim, bias=True)
@@ -37,7 +37,7 @@ class variational(torch.nn.Module):
         weights_init(self.mu.weight)
         weights_init(self.var.weight)
 
-    def forward(self, X, y, layer, eps=1e-7):
+    def forward(self, X, y, eps=1e-7):
 
         if(self.params.layer_y):
             y_sum = torch.sum(y, dim=1).view(-1,1) + eps
@@ -67,9 +67,9 @@ class variationalRes(torch.nn.Module):
         # ---------------------------------------------------------------
 
         self.params = params
-        self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
-        self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
-        self.emb_layer.weight.requires_grad = False
+        # self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
+        # self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
+        # self.emb_layer.weight.requires_grad = False
         self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
         # if(self.params.layer_y):
         #     self.l0 = nn.Linear(params.X_dim + params.e_dim, params.H_dim, bias=True)
@@ -102,7 +102,7 @@ class variationalRes(torch.nn.Module):
         weights_init(self.mu.weight)
         weights_init(self.var.weight)
 
-    def forward(self, X, y, layer, eps=1e-7):
+    def forward(self, X, y, eps=1e-7):
 
         if(self.params.layer_y):
             y_sum = torch.sum(y, dim=1).view(-1,1) + eps
@@ -172,9 +172,9 @@ class decoder(torch.nn.Module):
         super(decoder, self).__init__()
         self.params = params
 
-        self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
-        self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
-        self.emb_layer.weight.requires_grad = False
+        # self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
+        # self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
+        # self.emb_layer.weight.requires_grad = False
         self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
         if(self.params.layer_y):
             self.bn_cat = nn.BatchNorm1d(params.Z_dim + params.e_dim)
@@ -221,9 +221,9 @@ class decoderRes(torch.nn.Module):
         super(decoderRes, self).__init__()
         self.params = params
 
-        self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
-        self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
-        self.emb_layer.weight.requires_grad = False
+        # self.emb_layer = nn.Linear(params.y_dim, params.e_dim, bias=False) 
+        # self.emb_layer.weight = torch.nn.Parameter(torch.from_numpy(params.w2v_w).type(params.dtype))
+        # self.emb_layer.weight.requires_grad = False
         self.w2v_w = torch.from_numpy(params.w2v_w).type(params.dtype)
         self.bn_z = nn.BatchNorm1d(params.Z_dim)
         if(self.params.layer_y):

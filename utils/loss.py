@@ -48,4 +48,14 @@ class loss:
     def cls_loss(self, y, y_pred, params):
         # alpha = 0.1*params.N_unl/params.N
         alpha = .1
-        return alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
+        y_predNp = y_pred.data.cpu().numpy()
+        if(np.isnan(y_predNp).any()):
+            import pdb
+            pdb.set_trace()
+        try:
+            loss = alpha * torch.nn.functional.binary_cross_entropy(y_pred, y)*y.shape[-1]
+        except:
+            import pdb
+            pdb.set_trace()
+
+        return loss
