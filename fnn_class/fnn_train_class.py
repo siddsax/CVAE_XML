@@ -18,7 +18,8 @@ def losses_add(list_of_losses, losses=None):
 def train(x_tr, y_tr, x_te, y_te, x_unl, params):
     best_test_loss = 1e10
     init = 0
-    loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'dist_l1', 'dist_bce', 'dist_mse', "zero_dist", 'lossU', 'entropy', 'dist', 'kl_loss']
+    # loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'zero_dist', 'dist_bce', 'dist_l1', "dist_mse", 'lossU', 'entropy', 'dist', 'kl_loss_ss']
+    loss_names = ['lossF', 'lossL', 'recon_loss', 'dist', 'kl_loss', 'zero_dist', 'lossU', 'entropy', 'dist', 'kl_loss_ss']
     model = fnn_model_class(params)
     print(model)
     if not os.path.exists('saved_models/' + params.model_name ):
@@ -62,16 +63,17 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
                 params.mb_size /= params.ratio
                 X, Y = load_data(x_tr, y_tr, params)
                 params.mb_size *= params.ratio 
-                lossL, recon_loss, dist, kl_loss, dist_l1, dist_bce, dist_mse = model(X, Y)
+                # lossL, recon_loss, dist, kl_loss, dist_l1, dist_bce, dist_mse = model(X, Y)
+                lossL, recon_loss, dist, kl_loss = model(X, Y)
                 zero_dist = model.params.loss_fns.logxy_loss(X, Variable(torch.zeros(X.shape).type(model.params.dtype)), model.params).data.cpu().numpy()[0]
-                losses_new = [lossL.data[0], recon_loss, dist,kl_loss, dist_l1, dist_bce, dist_mse, zero_dist]
+                losses_new = [lossL.data[0], recon_loss, dist, kl_loss, zero_dist]#, dist_bce, dist_l1, dist_mse]
             else:
-                losses_new = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                losses_new = [0.0, 0.0, 0.0, 0.0, 0.0]#, 0.0, 0.0, 0.0]
             if(params.ss):
                 dummy = np.zeros(np.shape(x_unl))
                 XU, _ = load_data(x_unl, dummy, params) ###### using dummy as dummy
-                lossU, entropy, dist, kl_loss = model(XU)
-                losses_new += [lossU.data[0], entropy, dist, kl_loss]
+                lossU, entropy, dist, kl_loss_ss = model(XU)
+                losses_new += [lossU.data[0], entropy, dist, kl_loss_ss]
 
             if(params.ss and params.train_labels): 
                 lossF = lossL + lossU
@@ -172,7 +174,7 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
                 # ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old_tst, xlk_tr_tst,50),color='blue', s=1)
                 # ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(xlk_tr_old, losses[3],50),color='red', s=1)
                 if(params.ss):
-                    ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(dist_ss_old, losses[11],50),color='red', s=1)
+                    ax2.scatter(np.linspace(epoch-1,epoch,50), np.linspace(dist_ss_old, losses[-2],50),color='red', s=1)
 
                 ax3.scatter(np.linspace(epoch-1,epoch,50), np.linspace(tr_old, losses[0],50),color='blue', s=1)
                 plt.savefig(params.model_name + ".png")
@@ -184,4 +186,4 @@ def train(x_tr, y_tr, x_te, y_te, x_unl, params):
             xlk_tr_old = losses[3]
             tr_old = losses[0]
             if(params.ss):
-                dist_ss_old = losses[11]
+                dist_ss_old = losses[-2]

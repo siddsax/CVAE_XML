@@ -21,7 +21,7 @@ class fnn_model_class(nn.Module):
             self.variational = variational(params)
 
         self.classifier = classifier(params)
-        self.beta = 0#.1
+        self.beta = params.beta
         self.gamma = 1.0
         if(params.freezing):
             for param in self.variational.parameters():
@@ -64,7 +64,7 @@ class fnn_model_class(nn.Module):
                     print("dist")
                     pdb.set_trace()
             else:
-                kl_loss = self.beta#*self.params.loss_fns.kl(z_mean, z_log_var)
+                kl_loss = 0.0#self.beta*self.params.loss_fns.kl(z_mean, z_log_var)
                 if(self.params.justClassify == 0):
                     loss = recon_loss + kl_loss + dist
                     if isnan(dist):
@@ -72,7 +72,7 @@ class fnn_model_class(nn.Module):
                         pdb.set_trace()
                 else:
                     loss = recon_loss + kl_loss
-
+                # kl_loss = kl_loss.data[0]
             recon_loss = recon_loss.data[0]
             if(self.params.justClassify == 0):
                 dist = dist.data[0]
@@ -80,7 +80,7 @@ class fnn_model_class(nn.Module):
             if(test):
                 return loss, recon_loss, dist, dist_from_pred_y, kl_loss, Y_sample.data.cpu().numpy(), X_sample.data.cpu().numpy(), X_sample_from_pred_y.data.cpu().numpy(), dist_l1, dist_bce, dist_mse
             else:
-                return loss, recon_loss, dist, kl_loss, dist_l1, dist_bce, dist_mse
+                return loss, recon_loss, dist, kl_loss#, dist_l1, dist_bce, dist_mse
         else:
             Y_sample = self.classifier(batch_x)
             Y_sample = gumbel_multiSample(self.params, Y_sample, self.params.temperature)
@@ -96,8 +96,8 @@ class fnn_model_class(nn.Module):
                 kl_loss = 0.0
                 labeled_loss = dist
             else:
-                kl_loss = self.beta#*self.params.loss_fns.kl(z_mean, z_log_var)
-                labeled_loss = dist# + kl_loss
+                kl_loss = 0.0#self.beta*self.params.loss_fns.kl(z_mean, z_log_var)
+                labeled_loss = dist + kl_loss
                 # kl_loss = kl_loss.data[0]
                 dist = dist.data[0]
             loss = labeled_loss #+ entropy

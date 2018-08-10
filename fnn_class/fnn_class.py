@@ -34,6 +34,7 @@ parser.add_argument('--f', dest='freezing', type=int, default=0, help='layer ove
 parser.add_argument('--res', dest='decoderRes', type=int, default=0, help='Residual connections')
 parser.add_argument('--t', dest='temperature', type=float, default=1.0, help='temperature')
 parser.add_argument('--jc', dest='justClassify', type=int, default=0, help='temperature')
+parser.add_argument('--bta', dest='beta', type=float, default=1.0, help='temperature')
 
 params = parser.parse_args()
 
