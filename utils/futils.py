@@ -103,16 +103,16 @@ def save_load_data(params, save=0):
     params.go_token = '<GO/>'
     params.end_token = '<END/>'
     #####################################################
-    params.data_path = '../datasets/amzn_12/amzn_12'
+    #params.data_path = '../datasets/amzn_12/amzn_12'
     #params.data_path = '../datasets/Eurlex/eurlex'
-    #params.data_path = '../datasets/rcv/rcv'
+    params.data_path = '../datasets/rcv/rcv'
     #####################################################
     if(save):
         print("Loading Data")
         #####################################################
-        params.data_path = '../datasets/amzn_12/amzn_12.p'
+        #params.data_path = '../datasets/amzn_12/amzn_12.p'
         #params.data_path = '../datasets/Eurlex/eurlex_raw_text.p'
-        #params.data_path = '../datasets/rcv/rcv.p'
+        params.data_path = '../datasets/rcv/rcv.p'
         #####################################################
         x_tr, y_tr, x_te, y_te, vocabulary, vocabulary_inv, params = data_helpers.load_data(params, max_length=params.sequence_length, vocab_size=params.vocab_size)
         x_tr = x_tr.astype(np.int32)
@@ -120,9 +120,9 @@ def save_load_data(params, save=0):
         y_tr = y_tr.astype(np.int32)
         y_te = y_te.astype(np.int32)
         #####################################################
-        params.data_path = '../datasets/amzn_12/amzn_12'
+        #params.data_path = '../datasets/amzn_12/amzn_12'
         # params.data_path = '../datasets/Eurlex/eurlex'
-        #params.data_path = '../datasets/rcv/rcv'
+        params.data_path = '../datasets/rcv/rcv'
         #####################################################
         #if(y_tr.shape[1] > y_te.shape[1]):
         #    y_te = y_te.resize((np.shape(y_te)[0], np.shape(y_tr)[1]))
@@ -143,8 +143,8 @@ def save_load_data(params, save=0):
     x_te = sparse.load_npz(params.data_path + '/x_test.npz')
     y_te = sparse.load_npz(params.data_path + '/y_test.npz')
 
-    x_20 = np.load('../datasets/rcv/rcv/x_1.npy')
-    y_20 = np.load('../datasets/rcv/rcv/y_1.npy')
+    x_20 = x_tr#np.load('../datasets/rcv/rcv/x_1.npy')
+    y_20 = y_tr#np.load('../datasets/rcv/rcv/y_1.npy')
 
     # x_tr = x_20
     # y_tr = y_20
